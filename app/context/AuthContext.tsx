@@ -4,14 +4,21 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { account, OAuthProvider } from '../lib/appwrite';
 import { Models } from 'appwrite';
 
-interface UserProfile {
+// Define a profile interface that includes a picture.
+export interface UserProfile {
+  picture?: string;
+  // You can add other custom properties here if needed.
+}
+
+// Extend the Appwrite User type to include our custom properties.
+export interface ExtendedUser extends Models.User<UserProfile> {
   picture?: string;
 }
 
 interface AuthContextProps {
-  user: Models.User<UserProfile> | null;
+  user: ExtendedUser | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<Models.User<UserProfile>>;
+  signUp: (email: string, password: string, name: string) => Promise<ExtendedUser>;
   signIn: (email: string, password: string) => Promise<Models.Session>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -21,13 +28,14 @@ interface AuthContextProps {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<Models.User<UserProfile> | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchUser = async (): Promise<void> => {
     try {
       const userData = await account.get();
-      setUser(userData as Models.User<UserProfile>);
+      // Here we cast to ExtendedUser so that our custom properties are allowed.
+      setUser(userData as ExtendedUser);
     } catch {
       setUser(null);
     } finally {
@@ -43,8 +51,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     email: string,
     password: string,
     name: string
-  ): Promise<Models.User<UserProfile>> => {
-    return await account.create('unique()', email, password, name);
+  ): Promise<ExtendedUser> => {
+    return await account.create('unique()', email, password, name) as ExtendedUser;
   };
 
   const signIn = async (email: string, password: string): Promise<Models.Session> => {
