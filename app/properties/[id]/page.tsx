@@ -9,9 +9,10 @@ import {
   getReviewsForProperty,
   getBookingsForProperty,
   getBookingRulesForProperty,
+  getPriceRulesForProperty,
+  getPriceAdjustmentsForProperty,
 } from '../../lib/appwrite';
-import { PropertyDocument, Review, Booking, BookingRules } from '../../lib/types';
-import BookingFlowModal from '../../components/BookingFlowModal';
+import { PropertyDocument, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from '../../lib/types';
 import ImageSlider from '../../components/ImageSlider';
 import PropertyInfo from '../../components/PropertyInfo';
 import DescriptionAmenities from '../../components/DescriptionAmenities';
@@ -29,9 +30,10 @@ const PropertyDetailsPage: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingRules, setBookingRules] = useState<BookingRules | null>(null);
+  const [priceRules, setPriceRules] = useState<PriceRules | null>(null);
+  const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [showBookingModal, setShowBookingModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id || typeof id !== 'string') {
@@ -45,17 +47,23 @@ const PropertyDetailsPage: React.FC = () => {
       getReviewsForProperty(id),
       getBookingsForProperty(id),
       getBookingRulesForProperty(id),
+      getPriceRulesForProperty(id),
+      getPriceAdjustmentsForProperty(id),
     ])
-      .then(([prop, revs, book, rules]) => {
+      .then(([prop, revs, book, bRules, pRules, pAdjustments]) => {
         if (!prop) {
           setError('Property not found');
         } else {
           setProperty(prop as unknown as PropertyDocument);
           setReviews(revs);
           setBookings(book);
-          setBookingRules(rules);
+          setBookingRules(bRules);
+          setPriceRules(pRules);
+          setPriceAdjustments(pAdjustments);
           console.log("Bookings retrieved:", book);
-          console.log("Booking Rules retrieved:", rules);
+          console.log("Booking Rules retrieved:", bRules);
+          console.log("Price Rules retrieved:", pRules);
+          console.log("Price Adjustments retrieved:", pAdjustments);
         }
       })
       .catch((err) =>
@@ -65,7 +73,7 @@ const PropertyDetailsPage: React.FC = () => {
   }, [id]);
 
   const handleReserveNow = () => {
-    setShowBookingModal(true);
+  
   };
 
   if (loading) {
@@ -100,19 +108,20 @@ const PropertyDetailsPage: React.FC = () => {
   console.log('Image URLs:', imageUrls);
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="mt-[50px]">
       {/* Image Slider Component */}
       <ImageSlider images={imageUrls} height={IMAGE_SLIDER_HEIGHT} />
 
       {/* Header Overlay (Back button) */}
-      <div className="absolute top-4 left-4">
-        <button
-          onClick={() => router.back()}
-          className="bg-black bg-opacity-50 p-2 rounded-full"
-        >
-          <Image src="/assets/icons/cross.png" alt="Back" width={20} height={20} />
-        </button>
-      </div>
+      <div className="absolute top-4 left-4 z-10">
+  <button
+    onClick={() => router.back()}
+    className="bg-white p-2 rounded-full shadow"
+  >
+    <Image src="/assets/icons/cross.png" alt="Back" width={20} height={20} />
+  </button>
+</div>
+
 
       {/* Two Column Layout */}
       <div className="px-4 py-4 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -133,6 +142,8 @@ const PropertyDetailsPage: React.FC = () => {
               pricePerNight={property.pricePerNight}
               bookings={bookings}
               bookingRules={bookingRules}
+              priceRules={priceRules}
+              priceAdjustments={priceAdjustments}
             />
           </div>
         </div>
@@ -142,20 +153,14 @@ const PropertyDetailsPage: React.FC = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center">
         <button
           onClick={handleReserveNow}
-          className="bg-indigo-600 text-white px-6 py-3 rounded-full"
+          className="bg-orange-600 text-white px-6 py-3 rounded-full"
         >
           Reserve Now
         </button>
       </div>
 
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <BookingFlowModal
-          property={property}
-          onClose={() => setShowBookingModal(false)}
-          onConfirm={() => setShowBookingModal(false)}
-        />
-      )}
+      
+      
     </div>
   );
 };

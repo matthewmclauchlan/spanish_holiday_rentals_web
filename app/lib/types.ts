@@ -114,7 +114,7 @@ export interface Amenity {
 export interface HelpArticleFields {
   title: string;
   slug: string;
-  content: any; // Rich text field
+  content: string; // changed from 'any' to 'string'
   summary: string;
   publishDate: string;
 }
@@ -181,4 +181,24 @@ export interface BookingRules extends Models.Document {
   maxStay: number;
   advanceNotice: number; // in days
   cancellationPolicy: 'Firm' | 'Free' | 'Strict' |'Non-refundable' | string;
+}
+
+export interface PriceRules extends Models.Document {
+  basePricePerNight: number;
+  basePricePerNightWeekend: number;
+  weeklyDiscount: number;   // percentage discount as an integer
+  monthlyDiscount: number;  // percentage discount as an integer
+  cleaningFee: number;
+  petFee: number;
+  propertyId: string;
+}
+
+export interface PriceAdjustment extends Models.Document {
+  propertyId: string;
+  date: string;           // ISO date string
+  overridePrice: number;
+  blocked: boolean;
+  createdAt: string;      // ISO date string
+  updatedAt: string;      // ISO date string
+  userId: string;
 }

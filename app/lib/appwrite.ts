@@ -1,5 +1,5 @@
 import { Client, Account, Databases, OAuthProvider, Query, Models } from 'appwrite';
-import { FilterOptions, HouseRules, Review, Booking, BookingRules } from './types';
+import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
 
 const client = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
@@ -19,6 +19,8 @@ export const config = {
   reviewsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID || '',
   bookingsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKINGS_COLLECTION_ID || '',
   bookingRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKING_RULES_COLLECTION_ID || '',
+  priceRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_RULES_COLLECTION_ID || '',
+  priceAdjustmentsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_ADJUSTMENTS_COLLECTION_ID || '',
 };
 
 export const getImageUrl = (id: string): string => {
@@ -31,7 +33,6 @@ export const getImageUrl = (id: string): string => {
     return '';
   }
 
-  // Construct the full URL for the media file.
   return `${endpoint}/storage/buckets/${bucketId}/files/${id}/view?project=${projectId}`;
 };
 
@@ -131,7 +132,7 @@ export async function getHostProfileByUserId(userId: string): Promise<Models.Doc
   try {
     const hostCollId = config.hostCollectionId;
     if (!hostCollId) {
-      throw new Error("Missing host collection ID (EXPO_PUBLIC_APPWRITE_HOST_COLLECTION_ID).");
+      throw new Error("Missing host collection ID.");
     }
     const result = await databases.listDocuments<Models.Document>(
       config.databaseId,
@@ -154,33 +155,25 @@ export async function getHostProfileByUserId(userId: string): Promise<Models.Doc
  */
 export async function getPropertyById(id: string): Promise<Models.Document | null> {
   try {
-    // Fetch the property document from Appwrite.
     const property = await databases.getDocument<Models.Document>(
       config.databaseId,
       config.propertiesCollectionId,
       id
     );
     
-    // Fetch related media files by propertyId.
     const mediaFiles = await databases.listDocuments<Models.Document & { fileId: string }>(
       config.databaseId,
       config.mediaCollectionId,
       [Query.equal("propertyId", id)]
     );
     
-    // Convert media file IDs into full image URLs.
     const mediaUrls = mediaFiles.documents.map(
       (media) =>
         `https://cloud.appwrite.io/v1/storage/buckets/${config.bucketId}/files/${media.fileId}/preview?project=${config.projectId}`
     );
     
-    // Use the mainImage attribute from the property if available.
-    // Otherwise, if media files exist, fall back to the first media URL.
     const mainImage = property.mainImage || (mediaUrls.length > 0 ? mediaUrls[0] : undefined);
     
-    // Return the property with additional fields:
-    // - media: an array of image URLs
-    // - mainImage: the designated main image
     return { ...property, media: mediaUrls, mainImage };
   } catch (error) {
     console.error("❌ Error fetching property:", error);
@@ -226,26 +219,32 @@ export async function getReviewsForProperty(propertyId: string): Promise<Review[
   }
 }
 
+/**
+ * Fetch bookings for a property.
+ */
 export async function getBookingsForProperty(propertyId: string): Promise<Booking[]> {
   try {
     const response = await databases.listDocuments<Booking>(
       config.databaseId,
-      config.bookingsCollectionId, // Ensure this is set in your config
+      config.bookingsCollectionId,
       [Query.equal("propertyId", propertyId)]
     );
-    console.log("Bookings retrieved for property", propertyId, ":", response.documents);
-    return response.documents;
+    console.log("Bookings retrieved:", response.documents);
+    return response.documents.map((doc) => doc as unknown as Booking);
   } catch (error) {
     console.error("❌ Error fetching bookings:", error);
     return [];
   }
 }
 
+/**
+ * Fetch booking rules for a property.
+ */
 export async function getBookingRulesForProperty(propertyId: string): Promise<BookingRules | null> {
   try {
     const response = await databases.listDocuments<BookingRules>(
       config.databaseId,
-      process.env.NEXT_PUBLIC_APPWRITE_BOOKING_RULES_COLLECTION_ID || '', // make sure this env variable is set
+      config.bookingRulesCollectionId,
       [Query.equal("propertyId", propertyId)]
     );
     if (response.documents.length > 0) {
@@ -258,5 +257,41 @@ export async function getBookingRulesForProperty(propertyId: string): Promise<Bo
   }
 }
 
+/**
+ * Fetch price rules for a property.
+ */
+export async function getPriceRulesForProperty(propertyId: string): Promise<PriceRules | null> {
+  try {
+    const response = await databases.listDocuments<PriceRules>(
+      config.databaseId,
+      config.priceRulesCollectionId,
+      [Query.equal("propertyId", propertyId)]
+    );
+    if (response.documents.length > 0) {
+      return response.documents[0] as unknown as PriceRules;
+    }
+    return null;
+  } catch (error) {
+    console.error("❌ Error fetching price rules:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch price adjustments for a property.
+ */
+export async function getPriceAdjustmentsForProperty(propertyId: string): Promise<PriceAdjustment[]> {
+  try {
+    const response = await databases.listDocuments<PriceAdjustment>(
+      config.databaseId,
+      config.priceAdjustmentsCollectionId,
+      [Query.equal("propertyId", propertyId)]
+    );
+    return response.documents.map((doc) => doc as unknown as PriceAdjustment);
+  } catch (error) {
+    console.error("❌ Error fetching price adjustments:", error);
+    return [];
+  }
+}
 
 export { OAuthProvider };

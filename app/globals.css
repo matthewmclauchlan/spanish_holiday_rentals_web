@@ -14,10 +14,11 @@
 }
 
 body {
-  background: var(--background);
+  background: #ffffff; /* white background */
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 
 .hide-scrollbar {
   -ms-overflow-style: none;
