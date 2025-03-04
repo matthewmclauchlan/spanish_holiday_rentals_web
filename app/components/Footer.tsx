@@ -1,9 +1,10 @@
-"use client";
+// /app/components/Footer.tsx
+'use client';
 import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="py-8 bg-gray-50 border-t border-gray-200">
+    <footer className="fixed bottom-0 w-full bg-gray-50 border-t border-gray-200 py-4">
       <div className="container mx-auto px-8 text-center">
         <p className="text-sm text-gray-600">
           &copy; {new Date().getFullYear()} Spanish Rentals. All rights reserved.

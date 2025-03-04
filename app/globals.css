@@ -1,9 +1,5 @@
 @import "tailwindcss";
-
-@theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@import 'react-day-picker/style.css';
 
 :root {
   --background: #ffffff;
@@ -18,7 +14,49 @@
 }
 
 body {
-  color: var(--foreground);
   background: var(--background);
+  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom calendar styles */
+
+/* Remove borders from day cells */
+.custom-day {
+  border: none;
+}
+
+/* Booked dates: strike-through style */
+.booked-date {
+  text-decoration: line-through;
+  color: #555;
+  pointer-events: none;
+}
+
+/* Selected end: square style with fixed dimensions */
+.selected-end {
+  background-color: #3b82f6;
+  color: #fff;
+  border-radius: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Selected middle: continuous background for in-between days */
+.selected-middle {
+  background-color: #93c5fd;
+  color: #fff;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
 }

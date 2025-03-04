@@ -2,29 +2,38 @@
 'use client';
 
 import React from 'react';
-import {
-  Disclosure,
-  Menu,
-} from '@headlessui/react';
+import { Disclosure, Menu } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
-const navigation = [
-  { name: 'Dashboard', href: '#', current: true },
-  { name: 'Team', href: '#', current: false },
-  { name: 'Projects', href: '#', current: false },
-  { name: 'Calendar', href: '#', current: false },
+const guestNavigation = [
+  { name: 'Home', href: '/guest/home' },
+  { name: 'Explore', href: '/guest/explore' },
+  { name: 'Profile', href: '/guest/profile' },
 ];
 
-// Utility for combining class names
+const hostNavigation = [
+  { name: 'Dashboard', href: '/host/dashboard' },
+  { name: 'Properties', href: '/host/properties' },
+  { name: 'Bookings', href: '/host/bookings' },
+];
+
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
+  const pathname = usePathname();
+
+  // Determine if the user is a host by checking for a hostProfile.
+  const isHost = user && user.hostProfile;
+
+  // Choose navigation based on user role.
+  const navigation = user ? (isHost ? hostNavigation : guestNavigation) : [];
 
   return (
     <Disclosure as="nav" className="bg-gray-800 relative z-50">
@@ -55,25 +64,27 @@ export default function Navbar() {
                     />
                   </Link>
                 </div>
-                <div className="hidden sm:ml-6 sm:block">
-                  <div className="flex space-x-4">
-                    {navigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        aria-current={item.current ? 'page' : undefined}
-                        className={classNames(
-                          item.current
-                            ? 'bg-gray-900 text-white'
-                            : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                          'rounded-md px-3 py-2 text-sm font-medium'
-                        )}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
+                {user && (
+                  <div className="hidden sm:ml-6 sm:block">
+                    <div className="flex space-x-4">
+                      {navigation.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          aria-current={pathname === item.href ? 'page' : undefined}
+                          className={classNames(
+                            pathname === item.href
+                              ? 'bg-gray-900 text-white'
+                              : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                            'rounded-md px-3 py-2 text-sm font-medium'
+                          )}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <button
@@ -89,9 +100,10 @@ export default function Navbar() {
                   <div>
                     <Menu.Button className="relative flex rounded-full bg-gray-800 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none">
                       <span className="sr-only">Open user menu</span>
+                      {/* Use a static avatar icon */}
                       <Image
                         alt="User avatar"
-                        src={user?.picture || '/assets/icons/avatar.png'}
+                        src="/assets/icons/avatar.png"
                         width={32}
                         height={32}
                         className="rounded-full"
@@ -179,22 +191,23 @@ export default function Navbar() {
 
           <Disclosure.Panel className="sm:hidden">
             <div className="space-y-1 px-2 pt-2 pb-3">
-              {navigation.map((item) => (
-                <Disclosure.Button
-                  key={item.name}
-                  as={Link}
-                  href={item.href}
-                  aria-current={item.current ? 'page' : undefined}
-                  className={classNames(
-                    item.current
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                    'block rounded-md px-3 py-2 text-base font-medium'
-                  )}
-                >
-                  {item.name}
-                </Disclosure.Button>
-              ))}
+              {user &&
+                navigation.map((item) => (
+                  <Disclosure.Button
+                    key={item.name}
+                    as={Link}
+                    href={item.href}
+                    aria-current={pathname === item.href ? 'page' : undefined}
+                    className={classNames(
+                      pathname === item.href
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                      'block rounded-md px-3 py-2 text-base font-medium'
+                    )}
+                  >
+                    {item.name}
+                  </Disclosure.Button>
+                ))}
             </div>
           </Disclosure.Panel>
         </>

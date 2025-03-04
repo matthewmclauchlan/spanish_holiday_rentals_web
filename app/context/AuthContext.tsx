@@ -1,18 +1,17 @@
 // /app/context/AuthContext.tsx
 'use client';
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { account, OAuthProvider } from '../lib/appwrite';
+import { account, OAuthProvider, getHostProfileByUserId } from '../lib/appwrite';
 import { Models } from 'appwrite';
 
-// Define a profile interface that includes a picture.
 export interface UserProfile {
   picture?: string;
-  // You can add other custom properties here if needed.
+  // ... add any additional properties as needed
 }
 
-// Extend the Appwrite User type to include our custom properties.
+// Extend the Appwrite user type to include our hostProfile field.
 export interface ExtendedUser extends Models.User<UserProfile> {
-  picture?: string;
+  hostProfile?: Models.Document; // if a host profile exists, store it here
 }
 
 interface AuthContextProps {
@@ -34,8 +33,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUser = async (): Promise<void> => {
     try {
       const userData = await account.get();
-      // Here we cast to ExtendedUser so that our custom properties are allowed.
-      setUser(userData as ExtendedUser);
+      // Now fetch host profile using your existing function
+      const hostProfile = await getHostProfileByUserId(userData.$id);
+      // Extend the userData with hostProfile
+      setUser({ ...userData, hostProfile } as ExtendedUser);
     } catch {
       setUser(null);
     } finally {
@@ -52,7 +53,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     password: string,
     name: string
   ): Promise<ExtendedUser> => {
-    return await account.create('unique()', email, password, name) as ExtendedUser;
+    const newUser = await account.create('unique()', email, password, name);
+    return newUser as ExtendedUser;
   };
 
   const signIn = async (email: string, password: string): Promise<Models.Session> => {

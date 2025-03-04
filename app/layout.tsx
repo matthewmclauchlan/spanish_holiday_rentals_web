@@ -1,4 +1,4 @@
-// app/layout.tsx
+// /app/layout.tsx
 import './globals.css';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -18,7 +18,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col">
         <AuthProvider>
           <Navbar />
-          <main className="flex-grow">
+          {/* Wrapped children in a container to add margin/padding so content is not full screen */}
+          <main className="flex-grow pb-20 container mx-auto px-4">
             {children}
           </main>
           <Footer />
@@ -27,3 +28,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
