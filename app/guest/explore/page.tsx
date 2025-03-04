@@ -23,7 +23,7 @@ interface PropertyDocument extends Models.Document {
   description?: string;
 }
 
-export default function ExplorePage(): JSX.Element {
+export default function ExplorePage() {
   const [filters, setFilters] = useState<FilterOptions>({
     category: "All",
     location: "",
