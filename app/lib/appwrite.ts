@@ -1,10 +1,11 @@
+// app/lib/appwrite.ts
 import { Client, Account, Databases, OAuthProvider, Query, Models, ID } from 'appwrite';
 import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
 
 const client = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'project-id')
-  
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'project-id');
+
 
 export const account = new Account(client);
 export const databases = new Databases(client);
@@ -333,9 +334,15 @@ export async function createBooking(bookingData: BookingData): Promise<Models.Do
     }
     if (!bookingData.hostId) {
       // Fetch property to get hostId (if the property exists)
-      const property = await getPropertyById(bookingData.propertyId);
-      if (property && (property as { hostId?: string }).hostId) {
-        bookingData.hostId = (property as { hostId?: string }).hostId;
+      try {
+        const property = await getPropertyById(bookingData.propertyId);
+        if (property && (property as { hostId?: string }).hostId) {
+          bookingData.hostId = (property as { hostId?: string }).hostId;
+        } else {
+          console.warn("Property not found or hostId missing for propertyId:", bookingData.propertyId);
+        }
+      } catch (e) {
+        console.warn("Error fetching property for hostId:", e);
       }
     }
     const response = await databases.createDocument(

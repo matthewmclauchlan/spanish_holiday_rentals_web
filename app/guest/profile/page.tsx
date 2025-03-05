@@ -4,24 +4,24 @@ import React, { useEffect, useState } from 'react';
 import { account, databases, config } from '../../lib/appwrite';
 import { Query, Models } from 'appwrite';
 
-// Define a custom user type that extends Appwrite's Document type.
-interface AppwriteUser extends Models.Document {
-  name: string;
-  email: string;
-  // Add any additional properties you expect from your user document.
-}
-
-// Define an interface for a Booking document that extends Appwrite's Document
+// Define the interface for a Booking document that extends Appwrite's Document.
 interface Booking extends Models.Document {
   bookingReference: string;
   startDate: string;
   endDate: string;
   totalPrice: number;
   status: string;
-  // Add additional booking fields as needed
+  // Add additional booking fields as needed.
 }
 
-// Component to display account information
+// Define a custom user type that extends Appwrite's Document.
+interface AppwriteUser extends Models.Document {
+  name: string;
+  email: string;
+  // Add any additional user fields you expect.
+}
+
+// Component to display account information.
 function AccountInfo({ user }: { user: AppwriteUser }) {
   return (
     <div>
@@ -37,7 +37,7 @@ function AccountInfo({ user }: { user: AppwriteUser }) {
   );
 }
 
-// Component to display billing details (example static content)
+// Component to display billing details (example static content).
 function BillingDetails() {
   return (
     <div>
@@ -56,7 +56,7 @@ function BillingDetails() {
   );
 }
 
-// Component to display booking history
+// Component to display booking history.
 function BookingHistory() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -119,7 +119,7 @@ function BookingHistory() {
   );
 }
 
-// Main Profile Page with Sidebar Layout
+// Main Profile Page with Sidebar Layout.
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<'account' | 'billing' | 'bookings'>('account');
   const [user, setUser] = useState<AppwriteUser | null>(null);
@@ -128,10 +128,7 @@ export default function ProfilePage() {
   useEffect(() => {
     account
       .get()
-      .then((response) => {
-        // Convert the result to unknown first, then to AppwriteUser.
-        setUser(response as unknown as AppwriteUser);
-      })
+      .then((response) => setUser(response as unknown as AppwriteUser))
       .catch((err) => {
         console.error('Error fetching user details:', err);
         setUserError('Error fetching user details.');
