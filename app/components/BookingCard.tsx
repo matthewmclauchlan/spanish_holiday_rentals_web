@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Booking, BookingRules, PriceRules, PriceAdjustment } from '../lib/types';
 import CustomCalendar, { DateRange } from './CustomCalendar';
-import { account } from '../lib/appwrite'; // Adjust path to your Appwrite config file
+import { account } from '../lib/appwrite'; // Adjust path as needed
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -27,7 +27,14 @@ const BookingCard: React.FC<BookingCardProps> = ({
 }) => {
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
-  const [guests, setGuests] = useState<number>(1);
+  // Guest details states:
+  const [adults, setAdults] = useState<number>(1); // Minimum 1 adult
+  const [children, setChildren] = useState<number>(0);
+  const [babies, setBabies] = useState<number>(0);
+  const [cancellationPolicy, setCancellationPolicy] = useState<string>("strict");
+  const [pets, setPets] = useState<number>(0);
+
+  // Date modal states.
   const [isDateModalOpen, setIsDateModalOpen] = useState<boolean>(false);
   const [selectedRange, setSelectedRange] = useState<DateRange>({});
   const [customerEmail, setCustomerEmail] = useState<string>("");
@@ -121,6 +128,15 @@ const BookingCard: React.FC<BookingCardProps> = ({
           successUrl: window.location.origin + '/payment-success?session_id={CHECKOUT_SESSION_ID}',
           cancelUrl: window.location.origin + '/payment-cancel',
           customerEmail, // dynamically retrieved from Appwrite
+          // Pass guest details:
+          adults,
+          children,
+          babies,
+          cancellationPolicy,
+          pets,
+          // Optionally pass checkIn and checkOut if needed:
+          checkIn: checkIn ? checkIn.toISOString() : null,
+          checkOut: checkOut ? checkOut.toISOString() : null,
         }),
       });
       const data = await response.json();
@@ -140,14 +156,8 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
-  const openDateModal = () => {
-    setIsDateModalOpen(true);
-  };
-
-  const closeDateModal = () => {
-    setIsDateModalOpen(false);
-  };
-
+  const openDateModal = () => setIsDateModalOpen(true);
+  const closeDateModal = () => setIsDateModalOpen(false);
   const handleSelectRange = (range: DateRange) => {
     setSelectedRange(range);
     setCheckIn(range.from || null);
@@ -181,19 +191,60 @@ const BookingCard: React.FC<BookingCardProps> = ({
           />
         </div>
       </div>
+      {/* Guest details inputs */}
+      <div className="mb-4 grid grid-cols-3 gap-4">
+        <div>
+          <label className="block mb-1">Adults</label>
+          <input
+            type="number"
+            min="1"
+            value={adults}
+            onChange={(e) => setAdults(parseInt(e.target.value) || 1)}
+            className="border p-2 w-full"
+          />
+        </div>
+        <div>
+          <label className="block mb-1">Children</label>
+          <input
+            type="number"
+            min="0"
+            value={children}
+            onChange={(e) => setChildren(parseInt(e.target.value) || 0)}
+            className="border p-2 w-full"
+          />
+        </div>
+        <div>
+          <label className="block mb-1">Babies</label>
+          <input
+            type="number"
+            min="0"
+            value={babies}
+            onChange={(e) => setBabies(parseInt(e.target.value) || 0)}
+            className="border p-2 w-full"
+          />
+        </div>
+      </div>
       <div className="mb-4">
-        <label className="block mb-1">Guests</label>
+        <label className="block mb-1">Cancellation Policy</label>
         <select
-          value={guests}
-          onChange={(e) => setGuests(parseInt(e.target.value))}
+          value={cancellationPolicy}
+          onChange={(e) => setCancellationPolicy(e.target.value)}
           className="border p-2 w-full"
         >
-          {[...Array(10)].map((_, i) => (
-            <option key={i + 1} value={i + 1}>
-              {i + 1}
-            </option>
-          ))}
+          <option value="strict">Strict</option>
+          <option value="flexible">Flexible</option>
+          <option value="non-refundable">Non-refundable</option>
         </select>
+      </div>
+      <div className="mb-4">
+        <label className="block mb-1">Pets (Number)</label>
+        <input
+          type="number"
+          min="0"
+          value={pets}
+          onChange={(e) => setPets(parseInt(e.target.value) || 0)}
+          className="border p-2 w-full"
+        />
       </div>
       {nightlyCost > 0 && (
         <div className="mb-4">

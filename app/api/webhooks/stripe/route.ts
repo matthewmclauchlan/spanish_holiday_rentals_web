@@ -1,3 +1,4 @@
+// app/api/webhooks/stripe/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createBooking } from '../../../lib/appwrite'; // Adjust the import path as needed
@@ -6,22 +7,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-02-24.acacia',
 });
 
-// Use a secret webhook key (store securely; do not expose to the client)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
-
-// Optional: Log some details about the stripe instance for debugging.
-console.debug("Stripe instance details:", { id: stripe.constructor.name });
 
 export async function POST(request: Request) {
   const bodyText = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
 
   console.debug("Stripe signature header:", sig);
-  console.debug("Using webhook secret:", webhookSecret);
+  console.debug("Webhook secret:", webhookSecret);
 
   let event: Stripe.Event;
   try {
-    // Re-enable signature verification:
     event = stripe.webhooks.constructEvent(bodyText, sig, webhookSecret);
   } catch (err) {
     console.error('Error verifying webhook signature:', err);
@@ -48,6 +44,13 @@ export async function POST(request: Request) {
     const updatedAt = createdAt;
     const status = 'confirmed';
 
+    // Extract guest details from metadata:
+    const adults = parseInt(session.metadata?.adults || "1", 10);
+    const children = parseInt(session.metadata?.children || "0", 10);
+    const babies = parseInt(session.metadata?.babies || "0", 10);
+    const cancellationPolicy = session.metadata?.cancellationPolicy || "strict";
+    const pets = parseInt(session.metadata?.pets || "0", 10);
+
     if (!bookingReference || !userId || !propertyId || !checkIn || !checkOut) {
       console.error('Missing required metadata in Stripe session:', {
         bookingReference,
@@ -71,6 +74,13 @@ export async function POST(request: Request) {
       status,
       paymentId,
       customerEmail,
+      // Guest details:
+      adults,
+      children,
+      babies,
+      cancellationPolicy,
+      // If your booking schema requires a pets attribute, include it.
+      pets,
     };
 
     console.debug('Attempting to create booking in Appwrite with data:', bookingData);
