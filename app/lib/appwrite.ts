@@ -1,9 +1,10 @@
-import { Client, Account, Databases, OAuthProvider, Query, Models } from 'appwrite';
+import { Client, Account, Databases, OAuthProvider, Query, Models, ID } from 'appwrite';
 import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
 
 const client = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'project-id');
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'project-id')
+  
 
 export const account = new Account(client);
 export const databases = new Databases(client);
@@ -291,6 +292,63 @@ export async function getPriceAdjustmentsForProperty(propertyId: string): Promis
   } catch (error) {
     console.error("❌ Error fetching price adjustments:", error);
     return [];
+  }
+}
+
+/**
+ * Create a new booking in Appwrite.
+ */
+export interface BookingData {
+  userId: string;
+  propertyId: string;
+  startDate: string;
+  endDate: string;
+  totalPrice: number;
+  bookingReference: string;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+  hostId?: string;
+  paymentId?: string;
+  customerEmail?: string;
+}
+
+export async function createBooking(bookingData: BookingData): Promise<Models.Document> {
+  try {
+    const requiredFields: (keyof BookingData)[] = [
+      "userId",
+      "propertyId",
+      "startDate",
+      "endDate",
+      "totalPrice",
+      "bookingReference",
+      "createdAt",
+      "updatedAt",
+      "status",
+    ];
+    for (const field of requiredFields) {
+      if (!bookingData[field]) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+    if (!bookingData.hostId) {
+      // Fetch property to get hostId (if the property exists)
+      const property = await getPropertyById(bookingData.propertyId);
+      if (property && (property as { hostId?: string }).hostId) {
+        bookingData.hostId = (property as { hostId?: string }).hostId;
+      }
+    }
+    const response = await databases.createDocument(
+      config.databaseId,
+      config.bookingsCollectionId,
+      ID.unique(), // Let Appwrite generate a unique document ID.
+      bookingData
+    );
+    return response;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("❌ Error creating booking:", errorMessage);
+    throw error;
   }
 }
 
