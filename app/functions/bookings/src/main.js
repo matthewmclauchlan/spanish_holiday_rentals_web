@@ -1,78 +1,75 @@
-// index.js - Appwrite Cloud Function to push booking data to Glide
-// Make sure to install node-fetch (npm install node-fetch) or use a runtime that supports fetch.
+// main.js – Appwrite Cloud Function to push booking data to Glide
 
-import fetch from 'node-fetch';
+import axios from 'axios';
 
-
-module.exports = async function (context, req) {
+export async function pushBookingToGlide(context, req) {
   try {
     // Parse the incoming booking data.
-    // The data should include fields like:
-    // bookingReference, paymentId, startDate, endDate, totalPrice, status,
-    // cancellationPolicy, userId, propertyId, hostId, customerEmail, adults, children, infants, pets,
-    // createdAt, updatedAt, etc.
-    const bookingData = JSON.parse(req.payload);
-    console.log("Received booking data:", bookingData);
+    let payload = req?.payload || process.env.APPWRITE_FUNCTION_DATA || "{}";
+    if (typeof payload === "string") {
+      payload = JSON.parse(payload);
+    }
+    context.log("Received booking data:", JSON.stringify(payload));
 
     // Map your booking data to the Glide table columns.
-    // These keys correspond to the column IDs in your Glide table.
     const columnValues = {
-      "osSGC": bookingData.bookingReference,    // booking_reference
-      "zzS6X": bookingData.status,                // status
-      "OxHg9": bookingData.userId,                // appwrite_userId
-      "pqFGm": bookingData.cancellationPolicy,    // cancellation_policy
-      "7bQyT": bookingData.startDate,             // start_date
-      "cr54X": bookingData.endDate,               // end_date
-      "eBGjO": bookingData.createdAt,             // created_at
-      "KKnqL": bookingData.updatedAt,             // updated_at
-      "mTi6H": bookingData.totalPrice,            // total_price
-      "jZhQc": bookingData.adults,                // adults
-      "nMEJR": bookingData.children,              // children
-      "DACXd": bookingData.infants,               // infants
-      "k0pZu": bookingData.pets,                  // pets
-      "WUIZR": bookingData.propertyId,            // propertyId
-      "V0IbZ": bookingData.hostId,                // hostId
-      "lpVka": bookingData.paymentId,             // paymentId
-      "ceqf6": bookingData.customerEmail           // customer_email
+      "osSGC": payload.bookingReference,    // booking_reference
+      "zzS6X": payload.status,                // status
+      "OxHg9": payload.userId,                // appwrite_userId
+      "pqFGm": payload.cancellationPolicy,    // cancellation_policy
+      "7bQyT": payload.checkIn,               // start_date
+      "cr54X": payload.checkOut,              // end_date
+      "eBGjO": payload.createdAt,             // created_at
+      "KKnqL": payload.updatedAt,             // updated_at
+      "mTi6H": payload.totalPrice,            // total_price
+      "jZhQc": payload.adults,                // adults
+      "nMEJR": payload.children,              // children
+      "DACXd": payload.infants,               // infants
+      "k0pZu": payload.pets,                  // pets
+      "WUIZR": payload.propertyId,            // propertyId
+      "V0IbZ": payload.hostId,                // hostId
+      "lpVka": payload.paymentId,             // paymentId
+      "ceqf6": payload.customerEmail           // customer_email
     };
 
     // Build the payload for Glide.
-    const payload = {
-      appID: process.env.GLIDE_APP_ID, // e.g., "pjjqOZCYKIg5iaCeGQr2"
+    const glidePayload = {
+      appID: process.env.GLIDE_APP_ID,
       mutations: [
         {
           kind: "add-row-to-table",
-          tableName: process.env.GLIDE_TABLE_NAME, // e.g., "native-table-UyUUI1PGwF8XAmicS5jA"
+          tableName: process.env.GLIDE_TABLE_NAME,
           columnValues: columnValues
         }
       ]
     };
 
-    console.log("Posting to Glide endpoint:", process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables");
-    console.log("Payload to send:", payload);
+    context.log("Posting to Glide endpoint:", process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables");
+    context.log("Payload to send:", JSON.stringify(glidePayload));
 
-    // Send the POST request to Glide.
-    const response = await fetch(process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GLIDE_API_KEY}` // Provided API key
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    const data = await response.json();
-    console.log("Successfully pushed booking data to Glide:", data);
+    // Send the POST request to Glide using axios.
+    const response = await axios.post(
+      process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables",
+      glidePayload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GLIDE_API_KEY}`
+        }
+      }
+    );
+
+    context.log("Successfully pushed booking data to Glide:", JSON.stringify(response.data));
 
     return {
       status: 200,
-      body: JSON.stringify({ message: "Booking data pushed successfully", data }),
+      body: JSON.stringify({ message: "Booking data pushed successfully", data: response.data }),
     };
   } catch (error) {
-    console.error("Error pushing booking data to Glide:", error);
+    context.error("Error pushing booking data to Glide:", error);
     return {
       status: 500,
       body: JSON.stringify({ error: error.message || "An unknown error occurred" }),
     };
   }
-};
+}
