@@ -1,4 +1,3 @@
-// app/api/checkout/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
@@ -8,10 +7,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { lineItems, successUrl, cancelUrl, customerEmail, adults, children, babies, cancellationPolicy, pets } = body;
+  // Destructure using snake_case keys:
+  const {
+    lineItems,
+    success_url,  // renamed from successUrl
+    cancel_url,   // renamed from cancelUrl
+    customerEmail,
+    adults,
+    children,
+    babies,
+    cancellationPolicy,
+    pets,
+  } = body;
 
-  // Use the test values for userId and propertyId are now passed from the booking card if needed.
-  // For now, if they are not passed, you could default to your test values:
+  // Default test values
   const userId = body.userId || "67c47cfb1993fc5d9914";
   const propertyId = body.propertyId || "67b115860003fbebcf30";
   const checkIn = body.checkIn || "2025-04-01T00:00:00.000Z";
@@ -25,8 +34,8 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url, // now using the destructured value
+      cancel_url,
       customer_email: customerEmail,
       metadata: {
         bookingReference,
@@ -35,7 +44,7 @@ export async function POST(request: Request) {
         checkIn,
         checkOut,
         bookingDate,
-        // Pass guest details in metadata
+        // Convert guest details to strings:
         adults: adults?.toString() || "1",
         children: children?.toString() || "0",
         babies: babies?.toString() || "0",
