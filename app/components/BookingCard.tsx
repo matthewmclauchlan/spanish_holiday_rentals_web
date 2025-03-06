@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { Booking, BookingRules, PriceRules, PriceAdjustment, HouseRules } from '../lib/types';
 import CustomCalendar, { DateRange } from './CustomCalendar';
 import { account } from '../lib/appwrite';
 import { useRouter } from 'next/navigation';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface BookingCardProps {
   pricePerNight: number;
