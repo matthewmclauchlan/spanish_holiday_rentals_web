@@ -1,4 +1,3 @@
-// app/booking-confirmation/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -6,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getImageUrl } from '../../lib/appwrite';
+import { loadStripe } from '@stripe/stripe-js';
 
 interface BookingDetails {
   checkIn: string;
@@ -23,11 +23,15 @@ interface BookingDetails {
   propertyImageUrl: string;
   customerEmail: string;
   maxGuests: number;
+  // Optionally, you may have userId, propertyId, etc.
+  userId?: string;
+  propertyId?: string;
 }
 
 export default function BookingConfirmationPage() {
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
   const router = useRouter();
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
   useEffect(() => {
     const storedData = localStorage.getItem('bookingDetails');
@@ -43,8 +47,58 @@ export default function BookingConfirmationPage() {
   };
 
   const handleConfirmAndPay = async () => {
+    if (!bookingDetails) return;
     console.log("Proceeding to checkout with details:", bookingDetails);
-    router.push('/payment-success'); // Replace with your actual checkout call.
+    
+    // Build a simple line item based on total cost.
+    // You might choose a different structure for lineItems.
+    const payload = {
+      lineItems: [
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: { name: bookingDetails.propertyTitle },
+            unit_amount: Math.round(bookingDetails.totalCost * 100), // amount in cents
+          },
+          quantity: 1,
+        },
+      ],
+      // Notice we pass the success URL with the placeholder.
+      success_url: window.location.origin + '/payment-success?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: window.location.origin + '/payment-cancel',
+      customerEmail: bookingDetails.customerEmail,
+      // Optionally pass additional booking details in metadata.
+      userId: bookingDetails.userId || '',
+      propertyId: bookingDetails.propertyId || '',
+      checkIn: bookingDetails.checkIn,
+      checkOut: bookingDetails.checkOut,
+      adults: bookingDetails.adults,
+      children: bookingDetails.childCount,
+      babies: bookingDetails.infants,
+      cancellationPolicy: bookingDetails.cancellationPolicy,
+      pets: bookingDetails.pets,
+    };
+
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json();
+      if (result.error) {
+        console.error("Error from checkout API:", result.error);
+        return;
+      }
+      console.log("Stripe session created:", result);
+      const stripe = await stripePromise;
+      const redirectResult = await stripe?.redirectToCheckout({ sessionId: result.id });
+      if (redirectResult?.error) {
+        console.error("Stripe redirect error:", redirectResult.error.message);
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+    }
   };
 
   if (!bookingDetails) {
