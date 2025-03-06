@@ -1,3 +1,4 @@
+// app/booking-confirmation/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -54,12 +55,11 @@ export default function BookingConfirmationPage() {
     );
   }
 
-  // Convert propertyImageUrl to a string first.
-const imageUrlStr = String(bookingDetails.propertyImageUrl);
-const propertyImageUrl = imageUrlStr.startsWith('http')
-  ? imageUrlStr
-  : getImageUrl(imageUrlStr);
-
+  // Convert propertyImageUrl to a full URL if needed.
+  const imageUrlStr = String(bookingDetails.propertyImageUrl);
+  const propertyImageUrl = imageUrlStr.startsWith('http')
+    ? imageUrlStr
+    : getImageUrl(imageUrlStr);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">

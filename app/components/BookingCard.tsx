@@ -1,3 +1,4 @@
+// app/components/BookingCard.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,6 @@ import { Booking, BookingRules, PriceRules, PriceAdjustment, HouseRules } from '
 import CustomCalendar, { DateRange } from './CustomCalendar';
 import { account } from '../lib/appwrite';
 import { useRouter } from 'next/navigation';
-
 
 interface BookingCardProps {
   pricePerNight: number;
@@ -40,13 +40,13 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const [infants, setInfants] = useState<number>(0);
   const [pets, setPets] = useState<number>(0);
   const [customerEmail, setCustomerEmail] = useState<string>("");
-
+  
   // Date modal states
   const [isDateModalOpen, setIsDateModalOpen] = useState<boolean>(false);
   const [selectedRange, setSelectedRange] = useState<DateRange>({});
-
+  
   const router = useRouter();
-
+  
   useEffect(() => {
     account.get()
       .then((response) => setCustomerEmail(response.email))
@@ -54,14 +54,14 @@ const BookingCard: React.FC<BookingCardProps> = ({
         console.error("Error fetching user email:", error);
       });
   }, []);
-
+  
   // Use houseRules.guestsMax if provided; otherwise default to 6.
   // Total head count = adults + childCount + infants must not exceed maxGuests.
   const maxGuests = houseRules?.guestsMax ?? 6;
-
+  
   const normalizeDate = (d: Date): Date =>
     new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
+  
   const computeNightlyPrice = (date: Date): number => {
     const normDate = normalizeDate(date);
     const adjustment = priceAdjustments.find((adj) => {
@@ -79,7 +79,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
     return pricePerNight;
   };
-
+  
   const calculateNightlyCost = (): number => {
     if (!checkIn || !checkOut) return 0;
     let totalCost = 0;
@@ -90,9 +90,9 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
     return totalCost;
   };
-
+  
   const nightlyCost = calculateNightlyCost();
-
+  
   let discountPercent = 0;
   if (priceRules && checkIn && checkOut) {
     const nightsCount = Math.ceil(
@@ -108,7 +108,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const discountedNightlyCost = nightlyCost - (nightlyCost * discountPercent) / 100;
   const finalCleaningFee = priceRules ? priceRules.cleaningFee : cleaningFee;
   const totalCost = discountedNightlyCost + finalCleaningFee;
-
+  
   // Enforce guest limits for adults, children, and infants.
   const handleAdultChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAdults = parseInt(e.target.value) || 1;
@@ -118,7 +118,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       setAdults(newAdults);
     }
   };
-
+  
   const handleChildChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newChildCount = parseInt(e.target.value) || 0;
     if (adults + newChildCount + infants > maxGuests) {
@@ -127,7 +127,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       setChildCount(newChildCount);
     }
   };
-
+  
   const handleInfantChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newInfants = parseInt(e.target.value) || 0;
     if (adults + childCount + newInfants > maxGuests) {
@@ -136,7 +136,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       setInfants(newInfants);
     }
   };
-
+  
   // Functions for date modal.
   const openDateModal = () => setIsDateModalOpen(true);
   const closeDateModal = () => setIsDateModalOpen(false);
@@ -145,7 +145,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
     setCheckIn(range.from || null);
     setCheckOut(range.to || null);
   };
-
+  
   // On Reserve, store booking details in localStorage and navigate to the confirmation page.
   const handleReserveClick = () => {
     if (!checkIn || !checkOut) return;
@@ -166,10 +166,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
       customerEmail,
       maxGuests,
     };
+    console.log("Saving booking details:", bookingDetails); // Log booking details
     localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
     router.push('/booking-confirmation');
   };
-
+  
   return (
     <div className="border p-4 bg-white rounded-lg shadow-md relative">
       <h3 className="text-xl font-bold mb-4">Book this property</h3>
@@ -233,7 +234,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
           />
         </div>
       </div>
-      {/* Cancellation policy is not displayed on the booking card */}
+      {/* Pets input */}
       <div className="mb-4">
         <label className="block mb-1">Pets (Number)</label>
         <input
