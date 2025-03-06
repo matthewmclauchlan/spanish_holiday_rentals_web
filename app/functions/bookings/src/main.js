@@ -3,29 +3,18 @@ import axios from 'axios';
 
 export default async function pushBookingToGlide(context, req) {
   try {
-    // Log the entire request object for debugging.
-    context.log("Request object:", req);
+    // Log the APPWRITE_FUNCTION_DATA environment variable to see the payload
+    context.log("APPWRITE_FUNCTION_DATA:", process.env.APPWRITE_FUNCTION_DATA);
 
-    // Attempt to read the body as text if possible.
-    let rawPayload = "";
-    if (req && typeof req.text === "function") {
-      rawPayload = await req.text();
-      context.log("Read req.text() payload:", rawPayload);
-    } else if (req && req.body) {
-      // If req.body exists and is not a string, convert it.
-      rawPayload = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
-      context.log("Using req.body payload:", rawPayload);
-    } else if (process.env.APPWRITE_FUNCTION_DATA) {
-      rawPayload = process.env.APPWRITE_FUNCTION_DATA;
-      context.log("Using APPWRITE_FUNCTION_DATA payload:", rawPayload);
-    }
+    // Read payload from environment variable (this is how event triggers pass data)
+    let rawPayload = process.env.APPWRITE_FUNCTION_DATA || "";
+    context.log("Raw Payload:", rawPayload);
 
-    // Check if rawPayload is non-empty.
     if (!rawPayload || rawPayload.trim() === "") {
       throw new Error("No booking data provided in payload.");
     }
 
-    // Parse the payload.
+    // Parse the payload
     let payload;
     try {
       payload = JSON.parse(rawPayload);
@@ -34,7 +23,7 @@ export default async function pushBookingToGlide(context, req) {
     }
     context.log("Parsed booking payload:", JSON.stringify(payload));
 
-    // Map booking data to Glide table columns.
+    // Map booking data to Glide table columns
     const columnValues = {
       "osSGC": payload.bookingReference,    // booking_reference
       "zzS6X": payload.status,                // status
@@ -52,7 +41,7 @@ export default async function pushBookingToGlide(context, req) {
       "WUIZR": payload.propertyId,            // propertyId
       "V0IbZ": payload.hostId,                // hostId
       "lpVka": payload.paymentId,             // paymentId
-      "ceqf6": payload.customerEmail           // customer_email
+      "ceqf6": payload.customerEmail          // customer_email
     };
 
     context.log("Mapped column values:", JSON.stringify(columnValues));
@@ -83,7 +72,7 @@ export default async function pushBookingToGlide(context, req) {
         }
       }
     );
-    
+
     context.log("Successfully pushed booking data to Glide:", JSON.stringify(response.data));
 
     return {
