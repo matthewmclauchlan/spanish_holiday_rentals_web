@@ -1,16 +1,29 @@
-// main.js – Appwrite Cloud Function to push booking data to Glide
+// main.js – Appwrite Cloud Function to push booking data to Glide using axios
 import axios from 'axios';
 
 export default async function pushBookingToGlide(context, req) {
   try {
-    // Parse the incoming booking data.
-    let payload = req?.payload || process.env.APPWRITE_FUNCTION_DATA || "{}";
-    if (typeof payload === "string") {
-      payload = JSON.parse(payload);
-    }
-    context.log("Received booking data:", JSON.stringify(payload));
+    // Log the entire context and req for debugging
+    context.log("Full context:", JSON.stringify(context));
+    context.log("Request object:", JSON.stringify(req));
 
-    // Map your booking data to the Glide table columns.
+    // Attempt to extract the payload from various sources.
+    let payload = {};
+    if (req && req.body) {
+      payload = req.body;
+    } else if (context && context.payload) {
+      payload = context.payload;
+    } else if (process.env.APPWRITE_FUNCTION_DATA) {
+      payload = JSON.parse(process.env.APPWRITE_FUNCTION_DATA);
+    }
+    context.log("Parsed booking payload:", JSON.stringify(payload));
+
+    // Check if payload is empty
+    if (Object.keys(payload).length === 0) {
+      throw new Error("No booking data provided in payload.");
+    }
+
+    // Map your booking data to Glide table columns.
     const columnValues = {
       "osSGC": payload.bookingReference,    // booking_reference
       "zzS6X": payload.status,                // status
@@ -31,6 +44,8 @@ export default async function pushBookingToGlide(context, req) {
       "ceqf6": payload.customerEmail           // customer_email
     };
 
+    context.log("Mapped column values:", JSON.stringify(columnValues));
+
     // Build the payload for Glide.
     const glidePayload = {
       appID: process.env.GLIDE_APP_ID,
@@ -43,10 +58,13 @@ export default async function pushBookingToGlide(context, req) {
       ]
     };
 
-    context.log("Posting to Glide endpoint:", process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables");
-    context.log("Payload to send:", JSON.stringify(glidePayload));
+    context.log(
+      "Posting to Glide endpoint:",
+      process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables"
+    );
+    context.log("Payload to send to Glide:", JSON.stringify(glidePayload));
 
-    // Send the POST request to Glide using axios.
+    // Send the POST request to Glide.
     const response = await axios.post(
       process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables",
       glidePayload,
@@ -57,7 +75,7 @@ export default async function pushBookingToGlide(context, req) {
         }
       }
     );
-
+    
     context.log("Successfully pushed booking data to Glide:", JSON.stringify(response.data));
 
     return {
