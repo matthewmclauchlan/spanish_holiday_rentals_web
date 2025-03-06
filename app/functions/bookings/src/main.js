@@ -3,32 +3,38 @@ import axios from 'axios';
 
 export default async function pushBookingToGlide(context, req) {
   try {
-    // Log the context, request object, and environment variable for debugging.
-    context.log("Full context:", JSON.stringify(context));
-    context.log("Request object:", JSON.stringify(req));
-    context.log("APPWRITE_FUNCTION_DATA:", process.env.APPWRITE_FUNCTION_DATA);
+    // Log the raw payload from various sources.
+    const rawPayloadFromReq = req && req.body ? req.body : "";
+    const rawPayloadFromEnv = process.env.APPWRITE_FUNCTION_DATA || "";
+    context.log("Raw payload from req.body:", JSON.stringify(rawPayloadFromReq));
+    context.log("Raw payload from APPWRITE_FUNCTION_DATA:", rawPayloadFromEnv);
 
-    // Attempt to extract the payload from various possible sources.
-    let payload = {};
-    if (req && req.body && Object.keys(req.body).length > 0) {
-      payload = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      context.log("Using req.body payload");
-    } else if (req && req.payload && Object.keys(req.payload).length > 0) {
-      payload = typeof req.payload === "string" ? JSON.parse(req.payload) : req.payload;
-      context.log("Using req.payload payload");
-    } else if (process.env.APPWRITE_FUNCTION_DATA) {
-      payload = JSON.parse(process.env.APPWRITE_FUNCTION_DATA);
-      context.log("Using APPWRITE_FUNCTION_DATA payload");
+    // Choose a source for the payload.
+    let rawPayload = "";
+    if (typeof rawPayloadFromReq === "string" && rawPayloadFromReq.trim() !== "") {
+      rawPayload = rawPayloadFromReq;
+      context.log("Using payload from req.body");
+    } else if (typeof rawPayloadFromReq === "object" && Object.keys(rawPayloadFromReq).length > 0) {
+      // If req.body is already an object.
+      rawPayload = JSON.stringify(rawPayloadFromReq);
+      context.log("Using object payload from req.body");
+    } else if (rawPayloadFromEnv && rawPayloadFromEnv.trim() !== "") {
+      rawPayload = rawPayloadFromEnv;
+      context.log("Using payload from APPWRITE_FUNCTION_DATA");
     } else {
-      context.log("No payload found in any source");
-    }
-    
-    context.log("Parsed booking payload:", JSON.stringify(payload));
-    if (Object.keys(payload).length === 0) {
       throw new Error("No booking data provided in payload.");
     }
 
-    // Map your booking data to the Glide table columns.
+    // Parse the chosen raw payload.
+    let payload;
+    try {
+      payload = JSON.parse(rawPayload);
+    } catch (parseError) {
+      throw new Error("Failed to parse booking payload: " + parseError.message);
+    }
+    context.log("Parsed booking payload:", JSON.stringify(payload));
+
+    // Map booking data to Glide table columns.
     const columnValues = {
       "osSGC": payload.bookingReference,    // booking_reference
       "zzS6X": payload.status,                // status
