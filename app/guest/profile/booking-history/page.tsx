@@ -32,9 +32,13 @@ export default function BookingHistoryPage() {
         );
         console.log("Bookings fetched:", response.documents);
         setBookings(response.documents);
-      } catch (err: any) {
-        console.error('Error fetching bookings:', err);
-        setError(err.message || 'Unable to load bookings.');
+      } catch (err: unknown) {
+        let errorMessage = 'Unable to load bookings.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        console.error('Error fetching bookings:', errorMessage);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
