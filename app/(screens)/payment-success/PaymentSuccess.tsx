@@ -10,7 +10,7 @@ interface SessionData {
   currency: string;
   created: number;
   metadata?: {
-    bookingNumber?: string;
+    bookingReference?: string;  // Use bookingReference here
     bookingDate?: string;
   };
   error?: string;
@@ -59,8 +59,9 @@ export default function PaymentSuccess() {
   }
 
   const { payment_intent, amount_total, currency, created, metadata } = sessionData;
+  // Use metadata.bookingReference here.
   const bookingId =
-    metadata?.bookingNumber || "BKG-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+    metadata?.bookingReference || "BKG-" + Math.random().toString(36).substring(2, 10).toUpperCase();
   const bookingDate = metadata?.bookingDate
     ? new Date(metadata.bookingDate).toLocaleString()
     : new Date(created * 1000).toLocaleString();
@@ -69,18 +70,10 @@ export default function PaymentSuccess() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">Payment Successful!</h1>
       <div className="bg-gray-100 p-4 rounded-md shadow-md w-full max-w-md">
-        <p className="text-gray-700">
-          <strong>Payment ID:</strong> {payment_intent}
-        </p>
-        <p className="text-gray-700">
-          <strong>Booking ID:</strong> {bookingId}
-        </p>
-        <p className="text-gray-700">
-          <strong>Amount Paid:</strong> {(amount_total / 100).toFixed(2)} {currency.toUpperCase()}
-        </p>
-        <p className="text-gray-700">
-          <strong>Date &amp; Time:</strong> {bookingDate}
-        </p>
+        <p className="text-gray-700"><strong>Payment ID:</strong> {payment_intent}</p>
+        <p className="text-gray-700"><strong>Booking ID:</strong> {bookingId}</p>
+        <p className="text-gray-700"><strong>Amount Paid:</strong> {(amount_total / 100).toFixed(2)} {currency.toUpperCase()}</p>
+        <p className="text-gray-700"><strong>Date &amp; Time:</strong> {bookingDate}</p>
       </div>
       <div className="mt-6 text-gray-700 text-center">
         <p>Please keep your Booking ID for future reference.</p>

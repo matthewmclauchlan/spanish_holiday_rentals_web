@@ -359,4 +359,20 @@ export async function createBooking(bookingData: BookingData): Promise<Models.Do
   }
 }
 
+export async function getBookingsForUser(userId: string): Promise<Booking[]> {
+  try {
+    const response = await databases.listDocuments<Booking>(
+      config.databaseId,
+      config.bookingsCollectionId,
+      [Query.equal('userId', userId)]
+    );
+    return response.documents.map((doc) => doc as Booking);
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("❌ Error fetching bookings for user:", errorMessage);
+    throw error;
+  }
+}
+
 export { OAuthProvider };
