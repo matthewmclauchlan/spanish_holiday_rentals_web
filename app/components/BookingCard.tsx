@@ -2,19 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { Booking, BookingRules, PriceRules, PriceAdjustment } from '../lib/types';
+import { Booking, BookingRules, PriceRules, PriceAdjustment, HouseRules } from '../lib/types';
 import CustomCalendar, { DateRange } from './CustomCalendar';
-import { account } from '../lib/appwrite'; // Adjust path as needed
+import { account } from '../lib/appwrite';
+import { useRouter } from 'next/navigation';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface BookingCardProps {
-  pricePerNight: number; // fallback value (overridden by priceRules if provided)
-  cleaningFee?: number;  // fallback cleaning fee
+  pricePerNight: number;
+  cleaningFee?: number;
   bookings?: Booking[];
   bookingRules?: BookingRules | null;
   priceRules?: PriceRules | null;
   priceAdjustments?: PriceAdjustment[];
+  propertyTitle: string;
+  propertyImageUrl: string;
+  // cancellationPolicy is passed from BookingRules (read-only, not selectable)
+  cancellationPolicy: string;
+  houseRules?: HouseRules | null;
 }
 
 const BookingCard: React.FC<BookingCardProps> = ({
@@ -24,37 +30,40 @@ const BookingCard: React.FC<BookingCardProps> = ({
   bookingRules,
   priceRules,
   priceAdjustments = [],
+  propertyTitle,
+  propertyImageUrl,
+  cancellationPolicy,
+  houseRules,
 }) => {
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
-  // Guest details states:
-  const [adults, setAdults] = useState<number>(1); // Minimum 1 adult
-  const [children, setChildren] = useState<number>(0);
-  const [babies, setBabies] = useState<number>(0);
-  const [cancellationPolicy, setCancellationPolicy] = useState<string>("strict");
+  const [adults, setAdults] = useState<number>(1);
+  const [childCount, setChildCount] = useState<number>(0);
+  const [infants, setInfants] = useState<number>(0);
   const [pets, setPets] = useState<number>(0);
-
-  // Date modal states.
-  const [isDateModalOpen, setIsDateModalOpen] = useState<boolean>(false);
-  const [selectedRange, setSelectedRange] = useState<DateRange>({});
   const [customerEmail, setCustomerEmail] = useState<string>("");
 
-  // Retrieve the logged-in user's email from Appwrite.
+  // Date modal states
+  const [isDateModalOpen, setIsDateModalOpen] = useState<boolean>(false);
+  const [selectedRange, setSelectedRange] = useState<DateRange>({});
+
+  const router = useRouter();
+
   useEffect(() => {
     account.get()
-      .then((response) => {
-        setCustomerEmail(response.email);
-      })
+      .then((response) => setCustomerEmail(response.email))
       .catch((error) => {
         console.error("Error fetching user email:", error);
       });
   }, []);
 
-  // Helper to normalize a date to midnight.
+  // Use houseRules.guestsMax if provided; otherwise default to 6.
+  // Total head count = adults + childCount + infants must not exceed maxGuests.
+  const maxGuests = houseRules?.guestsMax ?? 6;
+
   const normalizeDate = (d: Date): Date =>
     new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-  // Compute nightly cost based on price adjustments and rules.
   const computeNightlyPrice = (date: Date): number => {
     const normDate = normalizeDate(date);
     const adjustment = priceAdjustments.find((adj) => {
@@ -73,7 +82,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
     return pricePerNight;
   };
 
-  // Calculate total nightly cost over the selected range.
   const calculateNightlyCost = (): number => {
     if (!checkIn || !checkOut) return 0;
     let totalCost = 0;
@@ -87,12 +95,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
 
   const nightlyCost = calculateNightlyCost();
 
-  // Apply discount if applicable.
   let discountPercent = 0;
   if (priceRules && checkIn && checkOut) {
     const nightsCount = Math.ceil(
       (normalizeDate(checkOut).getTime() - normalizeDate(checkIn).getTime()) /
-        (1000 * 60 * 60 * 24)
+      (1000 * 60 * 60 * 24)
     );
     if (nightsCount >= 30) {
       discountPercent = priceRules.monthlyDiscount;
@@ -101,67 +108,68 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
   }
   const discountedNightlyCost = nightlyCost - (nightlyCost * discountPercent) / 100;
-
-  // Use cleaning fee from priceRules if available.
   const finalCleaningFee = priceRules ? priceRules.cleaningFee : cleaningFee;
   const totalCost = discountedNightlyCost + finalCleaningFee;
 
-  // Stripe checkout handler.
-  const handleCheckout = async () => {
-    const stripe = await stripePromise;
-    const lineItems = [
-      {
-        price_data: {
-          currency: 'eur',
-          product_data: { name: 'Property Booking' },
-          unit_amount: Math.round(totalCost * 100), // in cents
-        },
-        quantity: 1,
-      },
-    ];
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lineItems,
-          successUrl: window.location.origin + '/payment-success?session_id={CHECKOUT_SESSION_ID}',
-          cancelUrl: window.location.origin + '/payment-cancel',
-          customerEmail, // dynamically retrieved from Appwrite
-          // Pass guest details:
-          adults,
-          children,
-          babies,
-          cancellationPolicy,
-          pets,
-          // Optionally pass checkIn and checkOut if needed:
-          checkIn: checkIn ? checkIn.toISOString() : null,
-          checkOut: checkOut ? checkOut.toISOString() : null,
-        }),
-      });
-      const data = await response.json();
-      if (!data.id) {
-        console.error('Checkout session creation failed:', data.error || data);
-        return;
-      }
-      const sessionId = data.id;
-      if (stripe) {
-        const result = await stripe.redirectToCheckout({ sessionId });
-        if (result.error) {
-          console.error(result.error.message);
-        }
-      }
-    } catch (error) {
-      console.error('Error during checkout:', error);
+  // Enforce guest limits for adults, children, and infants.
+  const handleAdultChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newAdults = parseInt(e.target.value) || 1;
+    if (newAdults + childCount + infants > maxGuests) {
+      setAdults(maxGuests - childCount - infants);
+    } else {
+      setAdults(newAdults);
     }
   };
 
+  const handleChildChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newChildCount = parseInt(e.target.value) || 0;
+    if (adults + newChildCount + infants > maxGuests) {
+      setChildCount(maxGuests - adults - infants);
+    } else {
+      setChildCount(newChildCount);
+    }
+  };
+
+  const handleInfantChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newInfants = parseInt(e.target.value) || 0;
+    if (adults + childCount + newInfants > maxGuests) {
+      setInfants(maxGuests - adults - childCount);
+    } else {
+      setInfants(newInfants);
+    }
+  };
+
+  // Functions for date modal.
   const openDateModal = () => setIsDateModalOpen(true);
   const closeDateModal = () => setIsDateModalOpen(false);
   const handleSelectRange = (range: DateRange) => {
     setSelectedRange(range);
     setCheckIn(range.from || null);
     setCheckOut(range.to || null);
+  };
+
+  // On Reserve, store booking details in localStorage and navigate to the confirmation page.
+  const handleReserveClick = () => {
+    if (!checkIn || !checkOut) return;
+    const bookingDetails = {
+      checkIn: checkIn.toISOString(),
+      checkOut: checkOut.toISOString(),
+      adults,
+      childCount,
+      infants,
+      pets,
+      totalCost,
+      nightlyCost,
+      discountPercent,
+      finalCleaningFee,
+      cancellationPolicy, // read-only from props, coming from BookingRules
+      propertyTitle,
+      propertyImageUrl,
+      customerEmail,
+      maxGuests,
+    };
+    localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
+    router.push('/booking-confirmation');
   };
 
   return (
@@ -198,8 +206,9 @@ const BookingCard: React.FC<BookingCardProps> = ({
           <input
             type="number"
             min="1"
+            max={maxGuests - childCount - infants}
             value={adults}
-            onChange={(e) => setAdults(parseInt(e.target.value) || 1)}
+            onChange={handleAdultChange}
             className="border p-2 w-full"
           />
         </div>
@@ -208,34 +217,25 @@ const BookingCard: React.FC<BookingCardProps> = ({
           <input
             type="number"
             min="0"
-            value={children}
-            onChange={(e) => setChildren(parseInt(e.target.value) || 0)}
+            max={maxGuests - adults - infants}
+            value={childCount}
+            onChange={handleChildChange}
             className="border p-2 w-full"
           />
         </div>
         <div>
-          <label className="block mb-1">Babies</label>
+          <label className="block mb-1">Infants</label>
           <input
             type="number"
             min="0"
-            value={babies}
-            onChange={(e) => setBabies(parseInt(e.target.value) || 0)}
+            max={maxGuests - adults - childCount}
+            value={infants}
+            onChange={handleInfantChange}
             className="border p-2 w-full"
           />
         </div>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1">Cancellation Policy</label>
-        <select
-          value={cancellationPolicy}
-          onChange={(e) => setCancellationPolicy(e.target.value)}
-          className="border p-2 w-full"
-        >
-          <option value="strict">Strict</option>
-          <option value="flexible">Flexible</option>
-          <option value="non-refundable">Non-refundable</option>
-        </select>
-      </div>
+      {/* Cancellation policy is not displayed on the booking card */}
       <div className="mb-4">
         <label className="block mb-1">Pets (Number)</label>
         <input
@@ -273,7 +273,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       )}
       {!isDateModalOpen && (
         <button
-          onClick={handleCheckout}
+          onClick={handleReserveClick}
           disabled={!checkIn || !checkOut || totalCost === 0}
           className="w-full bg-indigo-600 text-white py-2 rounded disabled:opacity-50"
         >

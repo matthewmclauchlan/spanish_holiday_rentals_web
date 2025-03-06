@@ -1,3 +1,4 @@
+// app/properties/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -11,8 +12,9 @@ import {
   getBookingRulesForProperty,
   getPriceRulesForProperty,
   getPriceAdjustmentsForProperty,
+  getHouseRulesForProperty,
 } from '../../lib/appwrite';
-import { PropertyDocument, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from '../../lib/types';
+import { PropertyDocument, Review, Booking, BookingRules, PriceRules, PriceAdjustment, HouseRules } from '../../lib/types';
 import ImageSlider from '../../components/ImageSlider';
 import PropertyInfo from '../../components/PropertyInfo';
 import DescriptionAmenities from '../../components/DescriptionAmenities';
@@ -32,6 +34,7 @@ const PropertyDetailsPage: React.FC = () => {
   const [bookingRules, setBookingRules] = useState<BookingRules | null>(null);
   const [priceRules, setPriceRules] = useState<PriceRules | null>(null);
   const [priceAdjustments, setPriceAdjustments] = useState<PriceAdjustment[]>([]);
+  const [houseRules, setHouseRules] = useState<HouseRules | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,22 +49,25 @@ const PropertyDetailsPage: React.FC = () => {
       getPropertyById(id),
       getReviewsForProperty(id),
       getBookingsForProperty(id),
+      getHouseRulesForProperty(id),
       getBookingRulesForProperty(id),
       getPriceRulesForProperty(id),
       getPriceAdjustmentsForProperty(id),
     ])
-      .then(([prop, revs, book, bRules, pRules, pAdjustments]) => {
+      .then(([prop, revs, book, hRules, bRules, pRules, pAdjustments]) => {
         if (!prop) {
           setError('Property not found');
         } else {
           setProperty(prop as unknown as PropertyDocument);
           setReviews(revs);
           setBookings(book);
+          setHouseRules(hRules);
           setBookingRules(bRules);
           setPriceRules(pRules);
           setPriceAdjustments(pAdjustments);
           console.log("Bookings retrieved:", book);
           console.log("Booking Rules retrieved:", bRules);
+          console.log("House Rules retrieved:", hRules);
           console.log("Price Rules retrieved:", pRules);
           console.log("Price Adjustments retrieved:", pAdjustments);
         }
@@ -71,10 +77,6 @@ const PropertyDetailsPage: React.FC = () => {
       )
       .finally(() => setLoading(false));
   }, [id]);
-
-  const handleReserveNow = () => {
-  
-  };
 
   if (loading) {
     return (
@@ -114,14 +116,13 @@ const PropertyDetailsPage: React.FC = () => {
 
       {/* Header Overlay (Back button) */}
       <div className="absolute top-4 left-4 z-10">
-  <button
-    onClick={() => router.back()}
-    className="bg-white p-2 rounded-full shadow"
-  >
-    <Image src="/assets/icons/cross.png" alt="Back" width={20} height={20} />
-  </button>
-</div>
-
+        <button
+          onClick={() => router.back()}
+          className="bg-white p-2 rounded-full shadow"
+        >
+          <Image src="/assets/icons/cross.png" alt="Back" width={20} height={20} />
+        </button>
+      </div>
 
       {/* Two Column Layout */}
       <div className="px-4 py-4 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -144,6 +145,11 @@ const PropertyDetailsPage: React.FC = () => {
               bookingRules={bookingRules}
               priceRules={priceRules}
               priceAdjustments={priceAdjustments}
+              propertyTitle={property.name}
+              propertyImageUrl={property.mainImage || imageUrls[0]}
+              // Pass cancellationPolicy from bookingRules instead of houseRules.
+              cancellationPolicy={bookingRules?.cancellationPolicy || "strict"}
+              houseRules={houseRules}
             />
           </div>
         </div>
@@ -152,15 +158,12 @@ const PropertyDetailsPage: React.FC = () => {
       {/* Fixed Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-between items-center">
         <button
-          onClick={handleReserveNow}
+          onClick={() => {}}
           className="bg-orange-600 text-white px-6 py-3 rounded-full"
         >
           Reserve Now
         </button>
       </div>
-
-      
-      
     </div>
   );
 };
