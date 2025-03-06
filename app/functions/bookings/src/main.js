@@ -1,8 +1,7 @@
 // main.js – Appwrite Cloud Function to push booking data to Glide
-
 import axios from 'axios';
 
-export async function pushBookingToGlide(context, req) {
+export default async function pushBookingToGlide(context, req) {
   try {
     // Parse the incoming booking data.
     let payload = req?.payload || process.env.APPWRITE_FUNCTION_DATA || "{}";
