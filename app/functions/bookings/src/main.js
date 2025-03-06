@@ -3,29 +3,29 @@ import axios from 'axios';
 
 export default async function pushBookingToGlide(context, req) {
   try {
-    // Log the raw payload from various sources.
-    const rawPayloadFromReq = req && req.body ? req.body : "";
-    const rawPayloadFromEnv = process.env.APPWRITE_FUNCTION_DATA || "";
-    context.log("Raw payload from req.body:", JSON.stringify(rawPayloadFromReq));
-    context.log("Raw payload from APPWRITE_FUNCTION_DATA:", rawPayloadFromEnv);
+    // Log the entire request object for debugging.
+    context.log("Request object:", req);
 
-    // Choose a source for the payload.
+    // Attempt to read the body as text if possible.
     let rawPayload = "";
-    if (typeof rawPayloadFromReq === "string" && rawPayloadFromReq.trim() !== "") {
-      rawPayload = rawPayloadFromReq;
-      context.log("Using payload from req.body");
-    } else if (typeof rawPayloadFromReq === "object" && Object.keys(rawPayloadFromReq).length > 0) {
-      // If req.body is already an object.
-      rawPayload = JSON.stringify(rawPayloadFromReq);
-      context.log("Using object payload from req.body");
-    } else if (rawPayloadFromEnv && rawPayloadFromEnv.trim() !== "") {
-      rawPayload = rawPayloadFromEnv;
-      context.log("Using payload from APPWRITE_FUNCTION_DATA");
-    } else {
+    if (req && typeof req.text === "function") {
+      rawPayload = await req.text();
+      context.log("Read req.text() payload:", rawPayload);
+    } else if (req && req.body) {
+      // If req.body exists and is not a string, convert it.
+      rawPayload = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+      context.log("Using req.body payload:", rawPayload);
+    } else if (process.env.APPWRITE_FUNCTION_DATA) {
+      rawPayload = process.env.APPWRITE_FUNCTION_DATA;
+      context.log("Using APPWRITE_FUNCTION_DATA payload:", rawPayload);
+    }
+
+    // Check if rawPayload is non-empty.
+    if (!rawPayload || rawPayload.trim() === "") {
       throw new Error("No booking data provided in payload.");
     }
 
-    // Parse the chosen raw payload.
+    // Parse the payload.
     let payload;
     try {
       payload = JSON.parse(rawPayload);
