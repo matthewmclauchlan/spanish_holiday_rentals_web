@@ -7,7 +7,7 @@ client
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new sdk.Databases(client);
-const collectionId = process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID;
+const collectionId = process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID; // Updated variable name
 const databaseId = process.env.APPWRITE_DATABASE_ID;
 
 export default async function handler({ req, res, log, error }) {
@@ -15,12 +15,11 @@ export default async function handler({ req, res, log, error }) {
     log("Function execution started.");
     
     const receivedSecret = req.headers['x-webhook-secret'] || req.body.webhookSecret;
-log("Received webhook secret: " + receivedSecret);
-if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
-  log("Webhook secret mismatch.");
-  return res.json({ success: false, error: 'Unauthorized' });
-}
-
+    log("Received webhook secret: " + receivedSecret);
+    if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
+      log("Webhook secret mismatch.");
+      return res.json({ success: false, error: 'Unauthorized' });
+    }
     
     const payload = req.body;
     log("Payload received: " + JSON.stringify(payload));
