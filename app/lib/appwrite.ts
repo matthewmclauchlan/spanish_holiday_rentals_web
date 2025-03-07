@@ -39,7 +39,10 @@ export interface AppwriteConfig {
   priceRulesCollectionId: string;
   priceAdjustmentsCollectionId: string;
   verificationBucketId: string;
-  userVerificationsCollectionId: string;
+  guestVerificationsCollectionId: string;
+  glideApiKey: string;
+  glideAppId: string;
+  glideGuestApprovalWebhookSecret: string;
 }
 
 export const config: AppwriteConfig = {
@@ -57,10 +60,14 @@ export const config: AppwriteConfig = {
   priceRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_RULES_COLLECTION_ID || '',
   priceAdjustmentsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_ADJUSTMENTS_COLLECTION_ID || '',
   verificationBucketId: process.env.NEXT_PUBLIC_APPWRITE_VERIFICATION_BUCKET_ID || '',
-  userVerificationsCollectionId: process.env.NEXT_PUBLIC_USER_VERIFICATIONS_COLLECTION_ID || '',
+  guestVerificationsCollectionId: process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID || '',
+  glideApiKey: process.env.GLIDE_API_KEY || '',
+  glideAppId: process.env.GLIDE_APP_ID || '',
+  glideGuestApprovalWebhookSecret: process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET || '',
 };
 
 export { ID };
+
 
 export const getImageUrl = (id: string): string => {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
