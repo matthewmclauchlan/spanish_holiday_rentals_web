@@ -63,11 +63,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      await account.createOAuth2Session(OAuthProvider.Google, window.location.origin);
+      const redirectUrl = window.location.origin + '/context/Callback';
+      // Pass the success URL and optionally a failure URL as third parameter.
+      await account.createOAuth2Session(OAuthProvider.Google, redirectUrl, redirectUrl);
+      // After OAuth, the user is redirected to '/auth/callback', where you can call fetchUser().
     } catch (error) {
       console.error('Google sign in error:', error);
     }
   };
+  
 
   const signOut = async (): Promise<void> => {
     try {
