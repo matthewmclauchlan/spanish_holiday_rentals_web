@@ -1,17 +1,23 @@
 // /app/context/AuthContext.tsx
 'use client';
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { account, OAuthProvider } from '../lib/appwrite';
+import { account, OAuthProvider, getHostProfileByUserId } from '../lib/appwrite';
 import { Models } from 'appwrite';
 
-interface UserProfile {
+export interface UserProfile {
   picture?: string;
+  // ... add any additional properties as needed
+}
+
+// Extend the Appwrite user type to include our hostProfile field.
+export interface ExtendedUser extends Models.User<UserProfile> {
+  hostProfile?: Models.Document; // if a host profile exists, store it here
 }
 
 interface AuthContextProps {
-  user: Models.User<UserProfile> | null;
+  user: ExtendedUser | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<Models.User<UserProfile>>;
+  signUp: (email: string, password: string, name: string) => Promise<ExtendedUser>;
   signIn: (email: string, password: string) => Promise<Models.Session>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -21,13 +27,16 @@ interface AuthContextProps {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<Models.User<UserProfile> | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchUser = async (): Promise<void> => {
     try {
       const userData = await account.get();
-      setUser(userData as Models.User<UserProfile>);
+      // Now fetch host profile using your existing function
+      const hostProfile = await getHostProfileByUserId(userData.$id);
+      // Extend the userData with hostProfile
+      setUser({ ...userData, hostProfile } as ExtendedUser);
     } catch {
       setUser(null);
     } finally {
@@ -43,8 +52,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     email: string,
     password: string,
     name: string
-  ): Promise<Models.User<UserProfile>> => {
-    return await account.create('unique()', email, password, name);
+  ): Promise<ExtendedUser> => {
+    const newUser = await account.create('unique()', email, password, name);
+    return newUser as ExtendedUser;
   };
 
   const signIn = async (email: string, password: string): Promise<Models.Session> => {
