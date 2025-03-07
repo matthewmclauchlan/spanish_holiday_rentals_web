@@ -1,7 +1,8 @@
 // app/api/webhooks/stripe/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createBooking } from '../../../lib/appwrite'; // Adjust the import path as needed
+import { createBooking } from '../../../lib/appwrite'; // Adjust the import path as needed.
+import { sendBookingToGlide } from '../../../functions/bookings/src/sendBookingToGlide'; // Adjust the path to your helper file.
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-02-24.acacia',
@@ -36,9 +37,8 @@ export async function POST(request: Request) {
     const checkIn = session.metadata?.checkIn;
     const checkOut = session.metadata?.checkOut;
     const totalPrice = session.amount_total ? session.amount_total / 100 : 0;
-    const paymentId: string | undefined = typeof session.payment_intent === 'string'
-      ? session.payment_intent
-      : undefined;
+    const paymentId: string | undefined =
+      typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
     const customerEmail = session.customer_email || undefined;
     const createdAt = new Date(session.created * 1000).toISOString();
     const updatedAt = createdAt;
@@ -79,7 +79,6 @@ export async function POST(request: Request) {
       children,
       babies,
       cancellationPolicy,
-      // If your booking schema requires a pets attribute, include it.
       pets,
     };
 
@@ -88,6 +87,14 @@ export async function POST(request: Request) {
     try {
       const bookingResponse = await createBooking(bookingData);
       console.log('Booking created in Appwrite:', bookingResponse);
+
+      // Now manually trigger the Glide integration.
+      try {
+        const glideResult = await sendBookingToGlide(bookingData);
+        console.log('Glide function response:', glideResult);
+      } catch (glideError) {
+        console.error('Error triggering Glide function:', glideError);
+      }
     } catch (error: unknown) {
       console.error('Error creating booking in Appwrite:', error);
       return new NextResponse('Internal Server Error', { status: 500 });
