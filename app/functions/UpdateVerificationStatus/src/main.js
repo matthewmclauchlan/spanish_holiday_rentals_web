@@ -14,12 +14,13 @@ export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
     
-    const receivedSecret = req.headers['x-webhook-secret'];
-    log("Received webhook secret: " + receivedSecret);
-    if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
-      log("Webhook secret mismatch.");
-      return res.json({ success: false, error: 'Unauthorized' });
-    }
+    const receivedSecret = req.headers['x-webhook-secret'] || req.body.webhookSecret;
+log("Received webhook secret: " + receivedSecret);
+if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
+  log("Webhook secret mismatch.");
+  return res.json({ success: false, error: 'Unauthorized' });
+}
+
     
     const payload = req.body;
     log("Payload received: " + JSON.stringify(payload));
