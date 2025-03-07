@@ -2,32 +2,32 @@ import sdk from 'node-appwrite';
 
 const client = new sdk.Client();
 client
-  .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
+  .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT) // e.g., "https://cloud.appwrite.io/v1"
   .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new sdk.Databases(client);
-const collectionId = process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID; // Updated variable name
+const collectionId = process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID; // Use the updated env variable name
 const databaseId = process.env.APPWRITE_DATABASE_ID;
 
 export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
-    
+
     const receivedSecret = req.headers['x-webhook-secret'] || req.body.webhookSecret;
     log("Received webhook secret: " + receivedSecret);
     if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
       log("Webhook secret mismatch.");
       return res.json({ success: false, error: 'Unauthorized' });
     }
-    
+
     const payload = req.body;
     log("Payload received: " + JSON.stringify(payload));
 
     const {
       userId,
       image,
-      status,
+      status, // now using status directly
       moderationComments,
       decisionDate,
       submissionDate,
@@ -58,7 +58,7 @@ export default async function handler({ req, res, log, error }) {
         collectionId,
         verificationDoc.$id,
         {
-          verified: status === 'approved',
+          status, // store status directly
           moderationComments,
           decisionDate,
           submissionDate,
@@ -75,7 +75,7 @@ export default async function handler({ req, res, log, error }) {
         sdk.ID.unique(),
         {
           userId,
-          verified: status === 'approved',
+          status, // store status directly
           moderationComments,
           decisionDate,
           submissionDate,
