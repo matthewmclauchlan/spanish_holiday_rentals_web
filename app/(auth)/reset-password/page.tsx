@@ -1,10 +1,10 @@
 // /app/(auth)/reset-password/page.tsx
 'use client';
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { account } from '../../lib/appwrite';
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const userId = searchParams.get('userId') || '';
@@ -17,6 +17,7 @@ export default function ResetPasswordPage() {
     try {
       await account.updateRecovery(userId, secret, newPassword);
       setMessage('Password updated successfully.');
+      // Redirect to sign in page after a short delay
       setTimeout(() => router.push('/signin'), 2000);
     } catch (error) {
       console.error(error);
@@ -25,16 +26,30 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>New Password:</label>
+    <form onSubmit={handleSubmit} className="space-y-4 p-4">
+      <label className="block text-sm font-medium">New Password:</label>
       <input
         type="password"
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
         required
+        className="block w-full rounded-md border border-gray-300 px-3 py-2"
       />
-      <button type="submit">Update Password</button>
-      {message && <p>{message}</p>}
+      <button
+        type="submit"
+        className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500"
+      >
+        Update Password
+      </button>
+      {message && <p className="text-center text-sm">{message}</p>}
     </form>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <ResetPasswordPageContent />
+    </Suspense>
   );
 }
