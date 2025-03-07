@@ -1,4 +1,3 @@
-// /app/(auth)/signin/page.tsx
 'use client';
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -13,13 +12,9 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    console.log('Submitting sign in with', { email, password });
     try {
-      const session = await signIn(email, password);
-      console.log('Session created:', session);
+      await signIn(email, password);
       await fetchUser();
-      console.log('User fetched; waiting to redirect...');
-      // Wait 500ms before redirecting
       setTimeout(() => {
         window.location.assign('/guest/guestTabs');
       }, 500);

@@ -1,5 +1,5 @@
 // app/lib/appwrite.ts
-import { Client, Account, Databases, OAuthProvider, Query, Models, ID } from 'appwrite';
+import { Client, Account, Databases, OAuthProvider, Query, Models, ID, Storage } from 'appwrite';
 import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
 
 const client = new Client()
@@ -9,8 +9,27 @@ const client = new Client()
 
 export const account = new Account(client);
 export const databases = new Databases(client);
+export const storage = new Storage(client);
 
-export const config = {
+export interface AppwriteConfig {
+  endpoint: string;
+  databaseId: string;
+  propertiesCollectionId: string;
+  mediaCollectionId: string;
+  bucketId: string;
+  projectId: string;
+  hostCollectionId: string;
+  houseRulesCollectionId: string;
+  reviewsCollectionId: string;
+  bookingsCollectionId: string;
+  bookingRulesCollectionId: string;
+  priceRulesCollectionId: string;
+  priceAdjustmentsCollectionId: string;
+  verificationBucketId: string;
+}
+
+export const config: AppwriteConfig = {
+  endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1',
   databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
   propertiesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID || '',
   mediaCollectionId: process.env.NEXT_PUBLIC_APPWRITE_MEDIA_COLLECTION_ID || '',
@@ -23,6 +42,7 @@ export const config = {
   bookingRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKING_RULES_COLLECTION_ID || '',
   priceRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_RULES_COLLECTION_ID || '',
   priceAdjustmentsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_ADJUSTMENTS_COLLECTION_ID || '',
+  verificationBucketId: process.env.NEXT_PUBLIC_APPWRITE_VERIFICATION_BUCKET_ID || '',
 };
 
 export const getImageUrl = (id: string): string => {

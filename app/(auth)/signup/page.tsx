@@ -18,7 +18,7 @@ export default function SignUpPage() {
     setError('');
     try {
       await signUp(email, password, name);
-      // Redirect to sign in after successful account creation
+      // Optionally, call your Glide integration here.
       router.push('/guest/guestTabs');
     } catch {
       setError('Failed to create account. Please try again.');
@@ -29,8 +29,7 @@ export default function SignUpPage() {
     setError('');
     try {
       await signInWithGoogle();
-      // Optionally, after the OAuth flow, redirect the user
-      // For example: router.push('/guest/guestTabs');
+      // OAuth redirection will handle user fetch.
     } catch {
       setError('Failed to sign up with Google. Please try again.');
     }

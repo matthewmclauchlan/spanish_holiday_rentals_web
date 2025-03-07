@@ -6,12 +6,11 @@ import { Models } from 'appwrite';
 
 export interface UserProfile {
   picture?: string;
-  // ... add any additional properties as needed
+  // Additional custom properties can be added here
 }
 
-// Extend the Appwrite user type to include our hostProfile field.
 export interface ExtendedUser extends Models.User<UserProfile> {
-  hostProfile?: Models.Document; // if a host profile exists, store it here
+  hostProfile?: Models.Document;
 }
 
 interface AuthContextProps {
@@ -33,9 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUser = async (): Promise<void> => {
     try {
       const userData = await account.get();
-      // Now fetch host profile using your existing function
       const hostProfile = await getHostProfileByUserId(userData.$id);
-      // Extend the userData with hostProfile
       setUser({ ...userData, hostProfile } as ExtendedUser);
     } catch {
       setUser(null);
@@ -48,12 +45,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     fetchUser();
   }, []);
 
-  const signUp = async (
-    email: string,
-    password: string,
-    name: string
-  ): Promise<ExtendedUser> => {
+  const signUp = async (email: string, password: string, name: string): Promise<ExtendedUser> => {
     const newUser = await account.create('unique()', email, password, name);
+    // Optionally, send new user details to Glide here.
     return newUser as ExtendedUser;
   };
 
@@ -63,7 +57,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      await account.createOAuth2Session(OAuthProvider.Google, window.location.origin);
+      // Provide a proper redirect URL – make sure this URL is registered in your Appwrite console.
+      const redirectUrl = window.location.origin + '/auth/callback';
+      await account.createOAuth2Session(OAuthProvider.Google, redirectUrl, redirectUrl);
     } catch (error) {
       console.error('Google sign in error:', error);
     }
