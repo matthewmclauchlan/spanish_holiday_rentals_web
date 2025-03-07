@@ -4,88 +4,72 @@ import React, { useEffect, useState } from 'react';
 import { account, databases, config } from '../../lib/appwrite';
 import { Query, Models } from 'appwrite';
 
-// Define the interface for a Booking document that extends Appwrite's Document.
 interface Booking extends Models.Document {
   bookingReference: string;
   startDate: string;
   endDate: string;
   totalPrice: number;
   status: string;
-  // Add additional booking fields as needed.
 }
 
-// Define a custom user type that extends Appwrite's Document.
 interface AppwriteUser extends Models.Document {
   name: string;
   email: string;
-  // Add any additional user fields you expect.
 }
 
-// Component to display account information.
 function AccountInfo({ user }: { user: AppwriteUser }) {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-2">Account Information</h2>
-      <p>
-        <strong>Name:</strong> {user.name}
-      </p>
-      <p>
-        <strong>Email:</strong> {user.email}
-      </p>
-      {/* Additional fields and edit options */}
+      <p><strong>Name:</strong> {user.name}</p>
+      <p><strong>Email:</strong> {user.email}</p>
     </div>
   );
 }
 
-// Component to display billing details (example static content).
 function BillingDetails() {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-2">Billing Details</h2>
-      <p>
-        <strong>Payment Method:</strong> Visa ending in 4242
-      </p>
-      <p>
-        <strong>Subscription:</strong> Premium Plan
-      </p>
-      <p>
-        <strong>Next Payment:</strong> 2025-04-01
-      </p>
-      {/* Options to update payment methods or view invoices */}
+      <p><strong>Payment Method:</strong> Visa ending in 4242</p>
+      <p><strong>Subscription:</strong> Premium Plan</p>
+      <p><strong>Next Payment:</strong> 2025-04-01</p>
     </div>
   );
 }
 
-// Component to display booking history.
 function BookingHistory() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Retrieve the logged-in user's details to filter bookings.
-    account
-      .get()
-      .then((user) => {
-        // Query Appwrite for bookings where userId equals the logged-in user's ID.
-        return databases.listDocuments<Booking>(
+    async function fetchBookings() {
+      try {
+        const user = await account.get();
+        console.log("Logged in user ID:", user.$id);
+        const response = await databases.listDocuments<Booking>(
           config.databaseId,
           config.bookingsCollectionId,
           [Query.equal('userId', user.$id)]
         );
-      })
-      .then((response) => {
+        console.log("Bookings fetched:", response.documents);
         setBookings(response.documents);
+      } catch (err: unknown) {
+        let errorMessage = 'Unable to load bookings.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        console.error('Error fetching bookings:', errorMessage);
+        setError(errorMessage);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Error fetching bookings:', err);
-        setError('Unable to load bookings.');
-        setLoading(false);
-      });
+      }
+    }
+    fetchBookings();
   }, []);
 
-  if (loading) return <p>Loading bookings...</p>;
+  if (loading) return <p>Loading booking history...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
@@ -97,20 +81,12 @@ function BookingHistory() {
         <ul className="list-disc pl-5 space-y-2">
           {bookings.map((booking) => (
             <li key={booking.$id} className="bg-white p-4 rounded shadow">
+              <p><strong>Booking Reference:</strong> {booking.bookingReference}</p>
               <p>
-                <strong>Booking Reference:</strong> {booking.bookingReference}
+                <strong>Dates:</strong> {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
               </p>
-              <p>
-                <strong>Dates:</strong>{' '}
-                {new Date(booking.startDate).toLocaleDateString()} -{' '}
-                {new Date(booking.endDate).toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Status:</strong> {booking.status}
-              </p>
-              <p>
-                <strong>Total Price:</strong> ${booking.totalPrice.toFixed(2)}
-              </p>
+              <p><strong>Status:</strong> {booking.status}</p>
+              <p><strong>Total Price:</strong> €{booking.totalPrice.toFixed(2)}</p>
             </li>
           ))}
         </ul>
@@ -119,7 +95,6 @@ function BookingHistory() {
   );
 }
 
-// Main Profile Page with Sidebar Layout.
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState<'account' | 'billing' | 'bookings'>('account');
   const [user, setUser] = useState<AppwriteUser | null>(null);
@@ -138,30 +113,24 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex">
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-gray-800 text-white p-4">
+      <aside className="w-64 bg-white text-black p-4 border-r">
         <h1 className="text-2xl font-bold mb-6">My Profile</h1>
         <nav className="space-y-4">
           <button
             onClick={() => setActiveSection('account')}
-            className={`block w-full text-left px-4 py-2 rounded ${
-              activeSection === 'account' ? 'bg-gray-700' : 'hover:bg-gray-600'
-            }`}
+            className={`block w-full text-left px-4 py-2 rounded ${activeSection === 'account' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
           >
             Account Information
           </button>
           <button
             onClick={() => setActiveSection('billing')}
-            className={`block w-full text-left px-4 py-2 rounded ${
-              activeSection === 'billing' ? 'bg-gray-700' : 'hover:bg-gray-600'
-            }`}
+            className={`block w-full text-left px-4 py-2 rounded ${activeSection === 'billing' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
           >
             Billing Details
           </button>
           <button
             onClick={() => setActiveSection('bookings')}
-            className={`block w-full text-left px-4 py-2 rounded ${
-              activeSection === 'bookings' ? 'bg-gray-700' : 'hover:bg-gray-600'
-            }`}
+            className={`block w-full text-left px-4 py-2 rounded ${activeSection === 'bookings' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
           >
             Booking History
           </button>
@@ -169,7 +138,7 @@ export default function ProfilePage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 bg-gray-100">
+      <main className="flex-1 p-6 bg-white text-black">
         {activeSection === 'account' && (
           <>
             {userError && <p className="text-red-500">{userError}</p>}

@@ -39,7 +39,7 @@ export async function sendBookingToGlide(bookingData) {
       mutations: [
         {
           kind: "add-row-to-table",
-          tableName: process.env.GLIDE_TABLE_NAME, // Must be set in your environment variables
+          tableName: process.env.GLIDE_BOOKINGS_TABLE, // Must be set in your environment variables
           columnValues: columnValues
         }
       ]
@@ -48,7 +48,7 @@ export async function sendBookingToGlide(bookingData) {
     const glideEndpoint = process.env.GLIDE_BOOKINGS_ENDPOINT || "https://api.glideapp.io/api/function/mutateTables";
     console.log("GLIDE_API_KEY:", process.env.GLIDE_API_KEY);
     console.log("GLIDE_APP_ID:", process.env.GLIDE_APP_ID);
-    console.log("GLIDE_TABLE_NAME:", process.env.GLIDE_TABLE_NAME);
+    console.log("GLIDE_BOOKINGS_TABLE:", process.env.GLIDE_BOOKINGS_TABLE);
     console.log("Glide endpoint:", glideEndpoint);
     console.log("Glide payload:", JSON.stringify(glidePayload));
 
