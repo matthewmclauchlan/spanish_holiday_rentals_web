@@ -1,11 +1,24 @@
-// app/lib/appwrite.ts
-import { Client, Account, Databases, OAuthProvider, Query, Models, ID, Storage } from 'appwrite';
+import { 
+  Client, 
+  Account, 
+  Databases, 
+  OAuthProvider, 
+  Query, 
+  Models, 
+  ID, 
+  Storage 
+} from 'appwrite';
 import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
 
 const client = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'project-id');
 
+// For server-side calls (e.g. in Cloud Functions), add the API key header if it's provided.
+// Ensure that APPWRITE_API_KEY is defined in your function's environment (not NEXT_PUBLIC_ to avoid exposing secrets).
+if (process.env.APPWRITE_API_KEY) {
+  (client as unknown as { addHeader: (key: string, value: string) => void }).addHeader('X-Appwrite-Key', process.env.APPWRITE_API_KEY);
+}
 
 export const account = new Account(client);
 export const databases = new Databases(client);
@@ -26,6 +39,7 @@ export interface AppwriteConfig {
   priceRulesCollectionId: string;
   priceAdjustmentsCollectionId: string;
   verificationBucketId: string;
+  userVerificationsCollectionId: string;
 }
 
 export const config: AppwriteConfig = {
@@ -43,7 +57,10 @@ export const config: AppwriteConfig = {
   priceRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_RULES_COLLECTION_ID || '',
   priceAdjustmentsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_ADJUSTMENTS_COLLECTION_ID || '',
   verificationBucketId: process.env.NEXT_PUBLIC_APPWRITE_VERIFICATION_BUCKET_ID || '',
+  userVerificationsCollectionId: process.env.NEXT_PUBLIC_USER_VERIFICATIONS_COLLECTION_ID || '',
 };
+
+export { ID };
 
 export const getImageUrl = (id: string): string => {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
