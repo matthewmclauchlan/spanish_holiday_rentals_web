@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string): Promise<Models.Session> => {
-    return await account.createSession(email, password);
+    return await account.createEmailPasswordSession(email, password);
   };
 
   const signInWithGoogle = async (): Promise<void> => {
