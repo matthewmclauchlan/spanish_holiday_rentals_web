@@ -1,25 +1,25 @@
-// main.js (or main.ts if you prefer TypeScript)
 import sdk from 'node-appwrite';
 
-// Initialize the Appwrite client with environment variables.
 const client = new sdk.Client();
 client
-  .setEndpoint(process.env.APPWRITE_ENDPOINT) // e.g., https://cloud.appwrite.io/v1
-  .setProject(process.env.APPWRITE_PROJECT_ID)
+  .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT) // e.g., "https://cloud.appwrite.io/v1"
+  .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new sdk.Databases(client);
+const collectionId = process.env.USER_VERIFICATIONS_COLLECTION_ID;
+const databaseId = process.env.APPWRITE_DATABASE_ID;
 
-// Our Cloud Function's main handler
-module.exports = async (req, res) => {
+export default async function handler({ req, res, log, error }) {
   try {
     // Verify the webhook secret
     const receivedSecret = req.headers['x-webhook-secret'];
     if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
 
-    // Parse JSON payload
+    // Parse the JSON payload from Glide
     const {
       userId,
       image,
@@ -31,13 +31,9 @@ module.exports = async (req, res) => {
       buttonFlag
     } = req.body;
 
-    console.log("Received payload:", req.body);
+    log(`Received payload: ${JSON.stringify(req.body)}`);
 
-    // Define the collection ID from environment variables
-    const collectionId = process.env.USER_VERIFICATIONS_COLLECTION_ID;
-    const databaseId = process.env.APPWRITE_DATABASE_ID;
-
-    // Try to fetch an existing verification document for this user
+    // Attempt to fetch an existing verification document for this user
     let verificationDoc;
     try {
       const result = await databases.listDocuments(
@@ -49,13 +45,13 @@ module.exports = async (req, res) => {
         verificationDoc = result.documents[0];
       }
     } catch (fetchError) {
-      console.error("Error fetching existing verification document:", fetchError);
+      error("Error fetching verification document: " + fetchError.message);
     }
 
-    let response;
+    let responseData;
     if (verificationDoc) {
       // Update the existing document
-      response = await databases.updateDocument(
+      responseData = await databases.updateDocument(
         databaseId,
         collectionId,
         verificationDoc.$id,
@@ -66,12 +62,12 @@ module.exports = async (req, res) => {
           submissionDate,
           approvedBy,
           buttonFlag,
-          image  // Optionally store the image info if needed
+          image,
         }
       );
     } else {
       // Create a new verification document
-      response = await databases.createDocument(
+      responseData = await databases.createDocument(
         databaseId,
         collectionId,
         sdk.ID.unique(),
@@ -83,15 +79,15 @@ module.exports = async (req, res) => {
           submissionDate,
           approvedBy,
           buttonFlag,
-          image  // Optionally store the image info if needed
+          image,
         }
       );
     }
 
-    console.log("Verification document updated/created:", response);
-    return res.json({ success: true, data: response });
-  } catch (error) {
-    console.error("Error in Cloud Function:", error);
-    return res.status(500).json({ success: false, error: error.message });
+    log(`Verification document updated/created: ${JSON.stringify(responseData)}`);
+    return res.json({ success: true, data: responseData });
+  } catch (err) {
+    error("Error in Cloud Function: " + err.message);
+    return res.status(500).json({ success: false, error: err.message });
   }
-};
+}
