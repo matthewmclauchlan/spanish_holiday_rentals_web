@@ -18,8 +18,9 @@ export default function SignUpPage() {
     setError('');
     try {
       await signUp(email, password, name);
-      // Optionally, call your Glide integration here.
-      router.push('/guest/guestTabs');
+      // Instead of directly going to /guest/guestTabs,
+      // redirect to a verification pending page.
+      router.push('/auth/verification-pending');
     } catch {
       setError('Failed to create account. Please try again.');
     }
@@ -29,7 +30,6 @@ export default function SignUpPage() {
     setError('');
     try {
       await signInWithGoogle();
-      // OAuth redirection will handle user fetch.
     } catch {
       setError('Failed to sign up with Google. Please try again.');
     }
@@ -52,6 +52,7 @@ export default function SignUpPage() {
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         {error && <p className="text-red-500">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form inputs for name, email, password */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-900">
               Full Name
