@@ -2,7 +2,7 @@ import sdk from 'node-appwrite';
 
 const client = new sdk.Client();
 client
-  .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT) // e.g., "https://cloud.appwrite.io/v1"
+  .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT) // e.g. https://cloud.appwrite.io/v1
   .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
   .setKey(process.env.APPWRITE_API_KEY);
 
@@ -15,8 +15,7 @@ export default async function handler({ req, res, log, error }) {
     // Verify the webhook secret
     const receivedSecret = req.headers['x-webhook-secret'];
     if (receivedSecret !== process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET) {
-      res.status(401).json({ success: false, error: 'Unauthorized' });
-      return;
+      return res.json({ success: false, error: 'Unauthorized' });
     }
 
     // Parse the JSON payload from Glide
@@ -28,7 +27,7 @@ export default async function handler({ req, res, log, error }) {
       decisionDate,
       submissionDate,
       approvedBy,
-      buttonFlag
+      buttonFlag,
     } = req.body;
 
     log(`Received payload: ${JSON.stringify(req.body)}`);
@@ -88,6 +87,6 @@ export default async function handler({ req, res, log, error }) {
     return res.json({ success: true, data: responseData });
   } catch (err) {
     error("Error in Cloud Function: " + err.message);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.json({ success: false, error: err.message });
   }
 }
