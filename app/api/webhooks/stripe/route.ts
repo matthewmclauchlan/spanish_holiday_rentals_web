@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createBooking } from '../../../lib/appwrite'; // Adjust the import path as needed.
-import { sendBookingToGlide } from '../../../functions/bookings/src/sendBookingToGlide'; // Adjust the path to your helper file.
+import { sendBookingToGlide } from '../../../lib/sendBookingToGlide'; // Adjust the path to your helper file.
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-02-24.acacia',
