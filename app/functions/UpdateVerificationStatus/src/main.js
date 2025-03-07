@@ -20,11 +20,12 @@ export default async function handler({ req, res, log, error }) {
 
     // Validate the webhook secret using the payload key that Glide sends.
     const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
-    if (payload.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET !== expectedSecret) {
-      log("Webhook secret mismatch. Received:", payload.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET);
-      return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
-    }
-    log("Webhook secret validated.");
+if (req.body.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET !== expectedSecret) {
+  log("Webhook secret mismatch. Received:", req.body.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET);
+  return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
+}
+log("Webhook secret validated.");
+
 
     const {
       userId,
