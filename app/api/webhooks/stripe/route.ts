@@ -1,8 +1,7 @@
-// app/api/webhooks/stripe/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createBooking } from '../../../lib/appwrite'; // Adjust the import path as needed.
-import { sendBookingToGlide } from '../../../lib/sendBookingToGlide'; // Adjust the path to your helper file.
+import { createBooking } from '../../../lib/appwrite'; // Adjust the path if needed.
+import { sendBookingToGlide } from '../../../lib/sendBookingToGlide'; // Adjust the path if needed.
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-02-24.acacia',
@@ -31,6 +30,7 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     console.debug('Processing checkout.session.completed event:', session);
 
+    // Extract metadata from the Stripe session
     const bookingReference = session.metadata?.bookingReference;
     const userId = session.metadata?.userId;
     const propertyId = session.metadata?.propertyId;
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const updatedAt = createdAt;
     const status = 'confirmed';
 
-    // Extract guest details from metadata:
+    // Extract guest details from metadata
     const adults = parseInt(session.metadata?.adults || "1", 10);
     const children = parseInt(session.metadata?.children || "0", 10);
     const babies = parseInt(session.metadata?.babies || "0", 10);
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
       return new NextResponse('Missing metadata', { status: 400 });
     }
 
+    // Build the bookingData object
     const bookingData = {
       userId,
       propertyId,
@@ -85,18 +86,17 @@ export async function POST(request: Request) {
     console.debug('Attempting to create booking in Appwrite with data:', bookingData);
 
     try {
+      // Create booking in Appwrite
       const bookingResponse = await createBooking(bookingData);
       console.log('Booking created in Appwrite:', bookingResponse);
 
-      // Now manually trigger the Glide integration.
-      try {
-        const glideResult = await sendBookingToGlide(bookingData);
-        console.log('Glide function response:', glideResult);
-      } catch (glideError) {
-        console.error('Error triggering Glide function:', glideError);
-      }
+      // Now manually trigger the Glide integration
+      console.log("Now triggering sendBookingToGlide with bookingData...");
+      const glideResult = await sendBookingToGlide(bookingData);
+      console.log('Glide function response:', glideResult);
+
     } catch (error: unknown) {
-      console.error('Error creating booking in Appwrite:', error);
+      console.error('Error creating booking in Appwrite or sending to Glide:', error);
       return new NextResponse('Internal Server Error', { status: 500 });
     }
   } else {
