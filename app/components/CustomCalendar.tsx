@@ -69,8 +69,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   };
 
   // Handle day click with validation:
-  // - If no start or a full range exists, start new selection.
-  // - Otherwise, attempt to set the end date and validate against rules.
   const handleDayClick = (date: Date) => {
     setWarning('');
     if (!selectedRange.from || (selectedRange.from && selectedRange.to)) {
@@ -89,7 +87,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       const start = normalizeDate(selectedRange.from);
       const end = normalizeDate(date);
       const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      // If the user clicked a day before the start, reset selection.
       if (nights < 0) {
         onSelectRange({ from: date, to: undefined });
         return;
@@ -114,12 +111,12 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     const weeks = getCalendarMatrix(month);
     return (
       <div className="p-2">
-        <div className="text-center font-bold mb-2">
+        <div className="text-center font-bold mb-2 text-gray-900 dark:text-white">
           {month.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </div>
         <div className="grid grid-cols-7 text-center text-xs md:text-sm font-bold mb-1">
           {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, index) => (
-            <div key={index}>{d}</div>
+            <div key={index} className="text-gray-900 dark:text-white">{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-2">
@@ -130,25 +127,23 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
               }
               const normDate = normalizeDate(date);
               const disabled = isDateBooked(date);
-              let cellClasses = "w-10 h-10 flex items-center justify-center cursor-pointer";
+              let cellClasses = 'w-10 h-10 flex items-center justify-center cursor-pointer';
               if (disabled) {
-                cellClasses += " booked-date";
+                cellClasses += ' bg-gray-300 dark:bg-gray-600 text-gray-400 dark:text-gray-700';
               }
-              // If only start is selected, highlight that day.
               if (selectedRange.from && !selectedRange.to) {
                 if (normDate.getTime() === normalizeDate(selectedRange.from).getTime()) {
-                  cellClasses += " selected-end";
+                  cellClasses += ' bg-blue-500 text-white dark:bg-blue-600';
                 }
               }
-              // If a full range is selected, highlight accordingly.
               if (selectedRange.from && selectedRange.to) {
                 const fromTime = normalizeDate(selectedRange.from).getTime();
                 const toTime = normalizeDate(selectedRange.to).getTime();
                 const dateTime = normDate.getTime();
                 if (dateTime === fromTime || dateTime === toTime) {
-                  cellClasses += " selected-end";
+                  cellClasses += ' bg-blue-500 text-white dark:bg-blue-600';
                 } else if (dateTime > fromTime && dateTime < toTime) {
-                  cellClasses += " selected-middle";
+                  cellClasses += ' bg-blue-200 text-blue-900 dark:bg-blue-600 dark:text-blue-200';
                 }
               }
               return (
@@ -177,24 +172,28 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
       onClick={onClose}
     >
       <div
-        className="bg-white p-4 rounded-lg shadow-md relative"
+        className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md relative"
         onClick={(e) => e.stopPropagation()}
       >
         {warning && (
-          <div className="mb-4 text-red-600 text-sm text-center">
-            {warning}
-          </div>
+          <div className="mb-4 text-red-600 text-sm text-center">{warning}</div>
         )}
         <div className="flex justify-between items-center mb-4">
-          <button onClick={prevMonthHandler} className="px-2 py-1 border rounded">
+          <button
+            onClick={prevMonthHandler}
+            className="px-2 py-1 border rounded bg-gray-200 dark:bg-gray-600 dark:text-white"
+          >
             Prev
           </button>
-          <div className="font-bold">Select Dates</div>
-          <button onClick={nextMonthHandler} className="px-2 py-1 border rounded">
+          <div className="font-bold text-gray-900 dark:text-white">Select Dates</div>
+          <button
+            onClick={nextMonthHandler}
+            className="px-2 py-1 border rounded bg-gray-200 dark:bg-gray-600 dark:text-white"
+          >
             Next
           </button>
         </div>
@@ -204,7 +203,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="absolute bottom-2 right-2 bg-gray-300 px-4 py-2 rounded"
+          className="absolute bottom-2 right-2 bg-gray-300 dark:bg-gray-600 text-black dark:text-white px-4 py-2 rounded"
         >
           Close
         </button>

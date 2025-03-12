@@ -1,55 +1,99 @@
+/* Import Tailwind first */
 @import "tailwindcss";
 @import 'react-day-picker/style.css';
 
 /* Import Inter font from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
+/* Global Variables */
 :root {
   --background: #ffffff;
-  --foreground: #000000; /* Pure black for light mode */
+  --foreground: #1a202c; /* Dark gray for light mode text */
+  --link-color: #1d4ed8; /* Default link color */
+  --content-background: #ffffff; /* White content background */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed; /* Light text in dark mode */
+    --background: #0a0a0a; /* Dark background for body in dark mode */
+    --foreground: #e2e8f0; /* Light gray for text in dark mode */
+    --link-color: #93c5fd; /* Light blue for links in dark mode */
+    --content-background: #1a202c; /* Darker content background for better contrast */
   }
 }
 
+/* Apply background and text color to the body */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground) !important;
   font-family: 'Inter', Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  width: 100%;
+  min-height: 100vh; /* Make sure the body takes full height */
+  margin: 0;
 }
 
-/* Optional: Create a utility class that forces global text color */
+/* Full width content background */
+main {
+  background-color: var(--content-background);
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
+  flex-grow: 1;
+  color: var(--foreground);
+}
+
+h1, h2, h3, h4, h5, h6, p, span, a {
+  color: var(--foreground) !important; /* Override Tailwind's text color */
+}
+
+/* Links */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: var(--link-color);
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: var(--foreground);
+    background-color: var(--background);
+  }
+
+  a {
+    color: var(--link-color);
+  }
+
+  a:hover {
+    color: var(--link-color);
+  }
+
+  main {
+    background-color: var(--content-background);
+  }
+}
+
+/* Optional: Global Text Utility */
 .global-text {
   color: var(--foreground) !important;
 }
 
-/* Other styles remain unchanged */
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-/* Custom calendar styles */
-
-/* Remove borders from day cells */
+/* Custom Styles for your Calendar */
 .custom-day {
   border: none;
 }
 
-/* Booked dates: strike-through style */
 .booked-date {
   text-decoration: line-through;
   color: #555;
   pointer-events: none;
 }
 
-/* Selected end: square style with fixed dimensions */
 .selected-end {
   background-color: #3b82f6;
   color: #fff;
@@ -61,11 +105,19 @@ body {
   justify-content: center;
 }
 
-/* Selected middle: continuous background for in-between days */
 .selected-middle {
   background-color: #93c5fd;
   color: #fff;
   padding: 0.5rem;
   border-radius: 0.25rem;
+}
+
+/* Hide scrollbar for all browsers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 

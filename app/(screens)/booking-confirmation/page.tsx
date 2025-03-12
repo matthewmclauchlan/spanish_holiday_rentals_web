@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getImageUrl } from '../../lib/appwrite';
 import { loadStripe } from '@stripe/stripe-js';
+import { account } from '../../lib/appwrite';
 
 interface BookingDetails {
   checkIn: string;
@@ -23,20 +24,30 @@ interface BookingDetails {
   propertyImageUrl: string;
   customerEmail: string;
   maxGuests: number;
-  // Optionally, you may have userId, propertyId, etc.
-  userId?: string;
+  userId?: string; // Optional, will be fetched dynamically
   propertyId?: string;
 }
 
 export default function BookingConfirmationPage() {
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
+  const [userId, setUserId] = useState<string | null>(null); // State for storing userId
   const router = useRouter();
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
+  // Fetch the logged-in user's data to get userId
   useEffect(() => {
+    account.get()
+      .then((response) => {
+        setUserId(response.$id); // Dynamically set the userId
+      })
+      .catch((error) => {
+        console.error("Error fetching user info:", error);
+      });
+
     const storedData = localStorage.getItem('bookingDetails');
     if (storedData) {
-      setBookingDetails(JSON.parse(storedData));
+      const parsedData = JSON.parse(storedData);
+      setBookingDetails(parsedData);
     } else {
       router.push('/');
     }
@@ -47,11 +58,10 @@ export default function BookingConfirmationPage() {
   };
 
   const handleConfirmAndPay = async () => {
-    if (!bookingDetails) return;
+    if (!bookingDetails || !userId) return;
     console.log("Proceeding to checkout with details:", bookingDetails);
-    
+
     // Build a simple line item based on total cost.
-    // You might choose a different structure for lineItems.
     const payload = {
       lineItems: [
         {
@@ -63,12 +73,10 @@ export default function BookingConfirmationPage() {
           quantity: 1,
         },
       ],
-      // Notice we pass the success URL with the placeholder.
       success_url: window.location.origin + '/payment-success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: window.location.origin + '/payment-cancel',
       customerEmail: bookingDetails.customerEmail,
-      // Optionally pass additional booking details in metadata.
-      userId: bookingDetails.userId || '',
+      userId: userId, // Now passing the dynamically fetched userId
       propertyId: bookingDetails.propertyId || '',
       checkIn: bookingDetails.checkIn,
       checkOut: bookingDetails.checkOut,
@@ -103,23 +111,22 @@ export default function BookingConfirmationPage() {
 
   if (!bookingDetails) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
         Loading booking details...
       </div>
     );
   }
 
-  // Convert propertyImageUrl to a full URL if needed.
   const imageUrlStr = String(bookingDetails.propertyImageUrl);
   const propertyImageUrl = imageUrlStr.startsWith('http')
     ? imageUrlStr
     : getImageUrl(imageUrlStr);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left Column: Booking Review and Cancellation Policy */}
-        <div>
+        <div className="text-gray-900 dark:text-white">
           <h1 className="text-3xl font-bold mb-6">Review Your Booking</h1>
           <div className="mb-6">
             <p className="mb-2">
@@ -134,7 +141,7 @@ export default function BookingConfirmationPage() {
           </div>
 
           {/* Cancellation Policy Section */}
-          <div className="border-t border-gray-300 pt-4 mb-6">
+          <div className="border-t border-gray-300 dark:border-gray-600 pt-4 mb-6">
             <h2 className="text-xl font-semibold mb-2">Cancellation Policy</h2>
             <p className="mb-2">
               {bookingDetails.cancellationPolicy === 'strict'
@@ -143,7 +150,7 @@ export default function BookingConfirmationPage() {
             </p>
             <Link
               href="/help/how-to-understand-our-cancellation-policies"
-              className="text-indigo-600 hover:underline"
+              className="text-indigo-600 dark:text-indigo-400 hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -155,13 +162,13 @@ export default function BookingConfirmationPage() {
           <div className="flex justify-between">
             <button
               onClick={handleEdit}
-              className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              className="px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
             >
               Edit
             </button>
             <button
               onClick={handleConfirmAndPay}
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 dark:hover:bg-indigo-500"
             >
               Confirm &amp; Pay
             </button>
@@ -169,8 +176,8 @@ export default function BookingConfirmationPage() {
         </div>
 
         {/* Right Column: Sticky Property Card with Price Breakdown */}
-        <div className="sticky top-4">
-          <div className="bg-white p-6 rounded-lg shadow">
+        <div className="sticky top-4 text-gray-900 dark:text-white">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div className="relative w-full h-64">
               <Image
                 src={propertyImageUrl}

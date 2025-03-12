@@ -1,5 +1,5 @@
-// /app/components/PropertyTypeSlider.tsx
 'use client';
+
 import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FiChevronRight, FiChevronLeft } from 'react-icons/fi';
@@ -70,7 +70,7 @@ const PropertyTypeSlider: React.FC<PropertyTypeSliderProps> = ({ types, selected
       )}
       <div
         ref={sliderRef}
-        className="flex space-x-4 overflow-x-auto py-4 px-10 hide-scrollbar"
+        className="flex space-x-4 overflow-x-auto py-4 px-10 scrollbar-hide"
       >
         {types.map((item) => (
           <div key={item.type} className="flex flex-col items-center min-w-[4rem]">

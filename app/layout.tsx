@@ -1,4 +1,3 @@
-// /app/layout.tsx
 import './globals.css';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -15,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <title>Spanish Holiday Rentals</title>
       </head>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col bg-white text-gray-900"> {/* Add text color and background here */}
         <AuthProvider>
           <Navbar />
           {/* Wrapped children in a container to add margin/padding so content is not full screen */}
@@ -28,4 +27,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

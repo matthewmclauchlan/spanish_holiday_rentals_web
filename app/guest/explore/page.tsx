@@ -77,30 +77,30 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with search and date filters */}
-      <header className="bg-white shadow py-4 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <input
-            type="text"
-            placeholder="Destination..."
-            value={filters.location}
-            onChange={handleSearchChange}
-            className="w-full sm:w-1/3 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="date"
-            value={filters.startDate || ""}
-            onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value || null }))}
-            className="w-full sm:w-1/4 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="date"
-            value={filters.endDate || ""}
-            onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value || null }))}
-            className="w-full sm:w-1/4 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
+    <div className="min-h-screen bg-white dark:bg-gray-900"> {/* Dark background for dark mode */}
+    {/* Header with search and date filters */}
+    <header className="bg-white dark:bg-gray-800 shadow py-4 px-6"> {/* Dark header for dark mode */}
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <input
+          type="text"
+          placeholder="Destination..."
+          value={filters.location}
+          onChange={handleSearchChange}
+          className="w-full sm:w-1/3 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"  // Adjust border and background for dark mode
+        />
+        <input
+          type="date"
+          value={filters.startDate || ""}
+          onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value || null }))}
+          className="w-full sm:w-1/4 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"  // Adjust border and background for dark mode
+        />
+        <input
+          type="date"
+          value={filters.endDate || ""}
+          onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value || null }))}
+          className="w-full sm:w-1/4 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"  // Adjust border and background for dark mode
+        />
+      </div>
       </header>
 
       {/* Property Type Slider */}

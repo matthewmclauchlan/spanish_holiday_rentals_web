@@ -419,4 +419,16 @@ export async function getBookingsForUser(userId: string): Promise<Booking[]> {
   }
 }
 
+export const getAvatarUrl = (fileId: string): string => {
+  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const bucketId = process.env.NEXT_PUBLIC_APPWRITE_AVATARS_BUCKET_ID;
+  if (!endpoint || !projectId || !bucketId) {
+    console.error("Missing Appwrite env variables for avatar URL.");
+    return '';
+  }
+  return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
+};
+
+
 export { OAuthProvider };

@@ -1,4 +1,3 @@
-// app/payment-success/PaymentSuccess.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -44,7 +43,7 @@ export default function PaymentSuccess() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <p className="text-red-600">{error}</p>
       </div>
     );
@@ -52,7 +51,7 @@ export default function PaymentSuccess() {
 
   if (!sessionData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <p>Loading payment details...</p>
       </div>
     );
@@ -67,15 +66,15 @@ export default function PaymentSuccess() {
     : new Date(created * 1000).toLocaleString();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      <h1 className="text-3xl font-bold text-gray-800 mb-4">Payment Successful!</h1>
-      <div className="bg-gray-100 p-4 rounded-md shadow-md w-full max-w-md">
-        <p className="text-gray-700"><strong>Payment ID:</strong> {payment_intent}</p>
-        <p className="text-gray-700"><strong>Booking ID:</strong> {bookingId}</p>
-        <p className="text-gray-700"><strong>Amount Paid:</strong> {(amount_total / 100).toFixed(2)} {currency.toUpperCase()}</p>
-        <p className="text-gray-700"><strong>Date &amp; Time:</strong> {bookingDate}</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">Payment Successful!</h1>
+      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md shadow-md w-full max-w-md">
+        <p className="text-gray-700 dark:text-gray-300"><strong>Payment ID:</strong> {payment_intent}</p>
+        <p className="text-gray-700 dark:text-gray-300"><strong>Booking ID:</strong> {bookingId}</p>
+        <p className="text-gray-700 dark:text-gray-300"><strong>Amount Paid:</strong> {(amount_total / 100).toFixed(2)} {currency.toUpperCase()}</p>
+        <p className="text-gray-700 dark:text-gray-300"><strong>Date &amp; Time:</strong> {bookingDate}</p>
       </div>
-      <div className="mt-6 text-gray-700 text-center">
+      <div className="mt-6 text-gray-700 dark:text-gray-300 text-center">
         <p>Please keep your Booking ID for future reference.</p>
         <p className="mt-2">
           If you have any questions regarding your payment or booking, please contact our support team.

@@ -1,15 +1,16 @@
-// /app/context/AuthContext.tsx
 'use client';
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { account, OAuthProvider, getHostProfileByUserId } from '../lib/appwrite';
-import { Models } from 'appwrite';
+import { account, OAuthProvider, getHostProfileByUserId, storage } from '../lib/appwrite';
+import { Models, ID } from 'appwrite';
 
 export interface UserProfile {
   picture?: string;
-  // Additional custom properties can be added here
+  avatarUrl?: string; // This field will hold the avatar URL in user preferences
 }
 
 export interface ExtendedUser extends Models.User<UserProfile> {
+  avatarUrl?: string;
   hostProfile?: Models.Document;
 }
 
@@ -21,6 +22,7 @@ interface AuthContextProps {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   fetchUser: () => Promise<void>;
+  updateAvatar: (file: File) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -32,8 +34,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUser = async (): Promise<void> => {
     try {
       const userData = await account.get();
+      // Extract avatarUrl from the user's preferences (if available)
+      const avatarUrl = (userData as { prefs?: { avatarUrl?: string } }).prefs?.avatarUrl || '';
       const hostProfile = await getHostProfileByUserId(userData.$id);
-      setUser({ ...userData, hostProfile } as ExtendedUser);
+      const updatedUser = {
+        ...userData,
+        hostProfile: hostProfile || undefined,
+        avatarUrl,
+      };
+      setUser(updatedUser as ExtendedUser);
     } catch {
       setUser(null);
     } finally {
@@ -47,7 +56,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, name: string): Promise<ExtendedUser> => {
     const newUser = await account.create('unique()', email, password, name);
-    // Optionally, send new user details to Glide here.
     return newUser as ExtendedUser;
   };
 
@@ -57,7 +65,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      // Provide a proper redirect URL – make sure this URL is registered in your Appwrite console.
       const redirectUrl = window.location.origin + '/auth/callback';
       await account.createOAuth2Session(OAuthProvider.Google, redirectUrl, redirectUrl);
     } catch (error) {
@@ -74,8 +81,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateAvatar = async (file: File): Promise<void> => {
+    try {
+      const bucketId = process.env.NEXT_PUBLIC_APPWRITE_AVATARS_BUCKET_ID!;
+      // Omit read/write arrays so that default bucket permissions are applied.
+      const fileUploaded = await storage.createFile(
+        bucketId,
+        ID.unique(),
+        file
+      );
+      const fileUrl = fileUploaded.$id;
+      // Update the user's preferences with the new avatar URL.
+      await account.updatePrefs({ avatarUrl: fileUrl });
+      setUser((prevUser) => (prevUser ? { ...prevUser, avatarUrl: fileUrl } : prevUser));
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signInWithGoogle, signOut, fetchUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, signUp, signIn, signInWithGoogle, signOut, fetchUser, updateAvatar }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,3 @@
-// app/components/BookingCard.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -172,99 +171,99 @@ const BookingCard: React.FC<BookingCardProps> = ({
   };
   
   return (
-    <div className="border p-4 bg-white rounded-lg shadow-md relative">
-      <h3 className="text-xl font-bold mb-4">Book this property</h3>
+    <div className="border p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md relative">
+      <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Book this property</h3>
       <div className="mb-4 grid grid-cols-2 gap-4">
         <div>
-          <label className="block mb-1">Check-in</label>
+          <label className="block mb-1 text-gray-900 dark:text-white">Check-in</label>
           <input
             type="text"
             readOnly
             onClick={openDateModal}
             value={checkIn ? checkIn.toLocaleDateString() : ''}
             placeholder="Select check-in date"
-            className="border p-2 w-full cursor-pointer"
+            className="border p-2 w-full cursor-pointer text-gray-900 dark:text-white"
           />
         </div>
         <div>
-          <label className="block mb-1">Check-out</label>
+          <label className="block mb-1 text-gray-900 dark:text-white">Check-out</label>
           <input
             type="text"
             readOnly
             onClick={openDateModal}
             value={checkOut ? checkOut.toLocaleDateString() : ''}
             placeholder="Select check-out date"
-            className="border p-2 w-full cursor-pointer"
+            className="border p-2 w-full cursor-pointer text-gray-900 dark:text-white"
           />
         </div>
       </div>
       {/* Guest details inputs */}
       <div className="mb-4 grid grid-cols-3 gap-4">
         <div>
-          <label className="block mb-1">Adults</label>
+          <label className="block mb-1 text-gray-900 dark:text-white">Adults</label>
           <input
             type="number"
             min="1"
             max={maxGuests - childCount - infants}
             value={adults}
             onChange={handleAdultChange}
-            className="border p-2 w-full"
+            className="border p-2 w-full text-gray-900 dark:text-white"
           />
         </div>
         <div>
-          <label className="block mb-1">Children</label>
+          <label className="block mb-1 text-gray-900 dark:text-white">Children</label>
           <input
             type="number"
             min="0"
             max={maxGuests - adults - infants}
             value={childCount}
             onChange={handleChildChange}
-            className="border p-2 w-full"
+            className="border p-2 w-full text-gray-900 dark:text-white"
           />
         </div>
         <div>
-          <label className="block mb-1">Infants</label>
+          <label className="block mb-1 text-gray-900 dark:text-white">Infants</label>
           <input
             type="number"
             min="0"
             max={maxGuests - adults - childCount}
             value={infants}
             onChange={handleInfantChange}
-            className="border p-2 w-full"
+            className="border p-2 w-full text-gray-900 dark:text-white"
           />
         </div>
       </div>
       {/* Pets input */}
       <div className="mb-4">
-        <label className="block mb-1">Pets (Number)</label>
+        <label className="block mb-1 text-gray-900 dark:text-white">Pets (Number)</label>
         <input
           type="number"
           min="0"
           value={pets}
           onChange={(e) => setPets(parseInt(e.target.value) || 0)}
-          className="border p-2 w-full"
+          className="border p-2 w-full text-gray-900 dark:text-white"
         />
       </div>
       {nightlyCost > 0 && (
         <div className="mb-4">
-          <div className="flex justify-between">
-            <span className="text-gray-700">Nightly Cost</span>
-            <span className="text-gray-700">€{nightlyCost.toFixed(2)}</span>
+          <div className="flex justify-between text-gray-900 dark:text-white">
+            <span>Nightly Cost</span>
+            <span>€{nightlyCost.toFixed(2)}</span>
           </div>
           {discountPercent > 0 && (
-            <div className="flex justify-between">
-              <span className="text-gray-700">Discount ({discountPercent}%)</span>
-              <span className="text-gray-700">
+            <div className="flex justify-between text-gray-900 dark:text-white">
+              <span>Discount ({discountPercent}%)</span>
+              <span>
                 -€{((nightlyCost * discountPercent) / 100).toFixed(2)}
               </span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span className="text-gray-700">Cleaning fee</span>
-            <span className="text-gray-700">€{finalCleaningFee.toFixed(2)}</span>
+          <div className="flex justify-between text-gray-900 dark:text-white">
+            <span>Cleaning fee</span>
+            <span>€{finalCleaningFee.toFixed(2)}</span>
           </div>
           <hr className="my-2" />
-          <div className="flex justify-between font-bold">
+          <div className="flex justify-between font-bold text-gray-900 dark:text-white">
             <span>Total</span>
             <span>€{totalCost.toFixed(2)}</span>
           </div>

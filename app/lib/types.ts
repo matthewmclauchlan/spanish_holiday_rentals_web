@@ -48,7 +48,6 @@ export interface Property {
   updatedAt: string;
   pricePerNight: number;
   userId: string; // Owner's user ID
-  // Geolocation as a comma-separated string or you can later refactor it to a structured object
   geolocation: string;
   mainImage?: string;
   mediaIds: string[]; // Array of file IDs from your media bucket
@@ -99,12 +98,12 @@ export interface User {
   name: string;
   email: string;
   avatar: string;
+  avatarUrl?: string;  // Optional avatarUrl field
   hostProfile?: HostProfile | null;
   roles?: string[];
 }
 
 // The structure for an amenity document.
-// The `icon` field holds a URL or local asset path.
 export interface Amenity {
   $id: string;
   name: string;      
@@ -114,7 +113,7 @@ export interface Amenity {
 export interface HelpArticleFields {
   title: string;
   slug: string;
-  content: string; // changed from 'any' to 'string'
+  content: string;
   summary: string;
   publishDate: string;
 }
@@ -155,16 +154,15 @@ export interface Review extends Models.Document {
   createdAt: string;
 }
 
-
 export interface Booking extends Models.Document {
-  startDate: string; // ISO date string
-  endDate: string;   // ISO date string
+  startDate: string;
+  endDate: string;
   totalPrice: number;
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
+  createdAt: string;
+  updatedAt: string;
   bookingReference: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'rejected' | string;
-  appliedPriceRuleIds: string[]; // Array of applied price rule IDs
+  appliedPriceRuleIds: string[];
   userId: string;
   adults: number;
   children: number;
@@ -179,15 +177,15 @@ export interface BookingRules extends Models.Document {
   propertyId: string;
   minStay: number;
   maxStay: number;
-  advanceNotice: number; // in days
-  cancellationPolicy: 'Firm' | 'Free' | 'Strict' |'Non-refundable' | string;
+  advanceNotice: number;
+  cancellationPolicy: 'Firm' | 'Free' | 'Strict' | 'Non-refundable' | string;
 }
 
 export interface PriceRules extends Models.Document {
   basePricePerNight: number;
   basePricePerNightWeekend: number;
-  weeklyDiscount: number;   // percentage discount as an integer
-  monthlyDiscount: number;  // percentage discount as an integer
+  weeklyDiscount: number;
+  monthlyDiscount: number;
   cleaningFee: number;
   petFee: number;
   propertyId: string;
@@ -195,10 +193,10 @@ export interface PriceRules extends Models.Document {
 
 export interface PriceAdjustment extends Models.Document {
   propertyId: string;
-  date: string;           // ISO date string
+  date: string;
   overridePrice: number;
   blocked: boolean;
-  createdAt: string;      // ISO date string
-  updatedAt: string;      // ISO date string
+  createdAt: string;
+  updatedAt: string;
   userId: string;
 }
