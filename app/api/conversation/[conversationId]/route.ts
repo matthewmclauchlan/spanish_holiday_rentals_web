@@ -9,21 +9,26 @@ interface Conversation {
   createdAt: Date;
 }
 
+// Define a type for the route context parameters as a Promise.
+type RouteContext = {
+  params: Promise<{ conversationId: string }>;
+};
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: RouteContext
 ): Promise<NextResponse> {
-  // Decode conversationId to avoid issues with encoding
-  const decodedConversationId = decodeURIComponent(params.conversationId);
+  // Await the params since they are provided as a Promise.
+  const { conversationId } = await params;
 
-  if (!decodedConversationId) {
+  if (!conversationId) {
     return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
   }
 
   try {
     const db = await connectDB();
     const conversationsCollection = db.collection<Conversation>('conversations');
-    const conversation = await conversationsCollection.findOne({ _id: decodedConversationId });
+    const conversation = await conversationsCollection.findOne({ _id: conversationId });
     const messages = conversation?.messages ?? [];
     return NextResponse.json({ messages }, { status: 200 });
   } catch (error: unknown) {
