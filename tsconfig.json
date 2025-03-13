@@ -33,7 +33,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "chat-backend/db.js"  ],
   "exclude": [
     "node_modules"
   ]

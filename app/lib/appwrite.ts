@@ -6,7 +6,8 @@ import {
   Query, 
   Models, 
   ID, 
-  Storage 
+  Storage,
+  Teams 
 } from 'appwrite';
 import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
 
@@ -23,6 +24,8 @@ if (process.env.APPWRITE_API_KEY) {
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const teams = new Teams(client);
+export { OAuthProvider, client };
 
 export interface AppwriteConfig {
   endpoint: string;
@@ -431,4 +434,3 @@ export const getAvatarUrl = (fileId: string): string => {
 };
 
 
-export { OAuthProvider };

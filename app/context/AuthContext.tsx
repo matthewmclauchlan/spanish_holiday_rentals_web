@@ -1,17 +1,20 @@
 'use client';
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { account, OAuthProvider, getHostProfileByUserId, storage } from '../lib/appwrite';
-import { Models, ID } from 'appwrite';
+import { account, OAuthProvider, getHostProfileByUserId, storage, teams, ID } from '../lib/appwrite';
+import { Models } from 'appwrite';
+import { useRouter } from 'next/navigation';
 
 export interface UserProfile {
   picture?: string;
   avatarUrl?: string; // This field will hold the avatar URL in user preferences
 }
 
+// Extend the Appwrite user type to include our custom roles
 export interface ExtendedUser extends Models.User<UserProfile> {
   avatarUrl?: string;
   hostProfile?: Models.Document;
+  roles: string[]; // For example: ['guest'] or ['support']
 }
 
 interface AuthContextProps {
@@ -30,19 +33,46 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
 
   const fetchUser = async (): Promise<void> => {
     try {
       const userData = await account.get();
-      // Extract avatarUrl from the user's preferences (if available)
+      // Extract avatarUrl from user preferences (if available)
       const avatarUrl = (userData as { prefs?: { avatarUrl?: string } }).prefs?.avatarUrl || '';
       const hostProfile = await getHostProfileByUserId(userData.$id);
-      const updatedUser = {
+
+      // Determine roles: check if the user belongs to the support team
+      const supportTeamId = process.env.NEXT_PUBLIC_APPWRITE_SUPPORT_TEAM_ID;
+      let roles: string[] = [];
+      if (supportTeamId) {
+        try {
+          // Get memberships for the support team
+          const membershipsResponse = await teams.listMemberships(supportTeamId) as { memberships: { userId: string; roles: string[] }[] };
+          const isSupport = membershipsResponse.memberships.some(
+            (membership) =>
+              membership.userId === userData.$id && membership.roles.includes('support')
+          );
+          roles = isSupport ? ['support'] : ['guest'];
+        } catch (err: unknown) {
+          console.error('Error checking support team memberships:', err);
+          roles = ['guest'];
+        }
+      } else {
+        roles = ['guest'];
+      }
+
+      // Log retrieved user ID and roles for debugging.
+      console.log(`Retrieved user: ${userData.$id}, Roles: ${roles.join(', ')}`);
+
+      const updatedUser: ExtendedUser = {
         ...userData,
         hostProfile: hostProfile || undefined,
         avatarUrl,
+        roles,
       };
-      setUser(updatedUser as ExtendedUser);
+
+      setUser(updatedUser);
     } catch {
       setUser(null);
     } finally {
@@ -60,6 +90,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string): Promise<Models.Session> => {
+    try {
+      // If there is an active session, delete it first.
+      await account.deleteSession('current');
+    } catch (e) {
+      console.warn('No active session to delete:', e);
+    }
     return await account.createEmailPasswordSession(email, password);
   };
 
@@ -76,6 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await account.deleteSession('current');
       setUser(null);
+      router.push("/"); // Redirect to home page after sign out
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -84,14 +121,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const updateAvatar = async (file: File): Promise<void> => {
     try {
       const bucketId = process.env.NEXT_PUBLIC_APPWRITE_AVATARS_BUCKET_ID!;
-      // Omit read/write arrays so that default bucket permissions are applied.
-      const fileUploaded = await storage.createFile(
-        bucketId,
-        ID.unique(),
-        file
-      );
+      const fileUploaded = await storage.createFile(bucketId, ID.unique(), file);
       const fileUrl = fileUploaded.$id;
-      // Update the user's preferences with the new avatar URL.
       await account.updatePrefs({ avatarUrl: fileUrl });
       setUser((prevUser) => (prevUser ? { ...prevUser, avatarUrl: fileUrl } : prevUser));
     } catch (error) {

@@ -16,7 +16,7 @@ export default function SignInPage() {
       await signIn(email, password);
       await fetchUser();
       setTimeout(() => {
-        window.location.assign('/guest/guestTabs');
+        window.location.assign('/guest/home');
       }, 500);
     } catch (err) {
       console.error('Sign in error:', err);
