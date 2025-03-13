@@ -1,6 +1,5 @@
 // app/api/conversation/[conversationId]/route.ts
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../chat-backend/db';
 
 interface Conversation {
@@ -12,10 +11,10 @@ interface Conversation {
 
 export async function GET(
   request: NextRequest,
-  context: { params: { conversationId: string } }
+  { params }: { params: Record<string, string> }
 ): Promise<NextResponse> {
-  // Extract and decode the conversationId from the route parameters.
-  const { conversationId } = context.params;
+  // Extract conversationId from params and decode it.
+  const conversationId = params.conversationId;
   const decodedConversationId = decodeURIComponent(conversationId);
 
   if (!decodedConversationId) {
