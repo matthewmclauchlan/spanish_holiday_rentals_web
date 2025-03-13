@@ -2,18 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../chat-backend/db';
 
-interface Conversation {
-  _id: string;
-  participants: string[];
-  messages: { senderId: string; content: string; timestamp: Date }[];
-  createdAt: Date;
-}
-
 export async function GET(
   request: NextRequest,
-  context: { params: { conversationId: string } }
+  context: { params: Promise<{ conversationId: string }> }
 ): Promise<NextResponse> {
-  const { conversationId } = context.params;
+  // Await the params (this works around the type error)
+  const { conversationId } = await context.params;
   const decodedConversationId = decodeURIComponent(conversationId);
 
   if (!decodedConversationId) {
@@ -22,7 +16,7 @@ export async function GET(
 
   try {
     const db = await connectDB();
-    const conversationsCollection = db.collection<Conversation>('conversations');
+    const conversationsCollection = db.collection('conversations');
     const conversation = await conversationsCollection.findOne({ _id: decodedConversationId });
     const messages = conversation?.messages ?? [];
     return NextResponse.json({ messages }, { status: 200 });
