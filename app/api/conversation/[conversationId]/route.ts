@@ -1,4 +1,5 @@
 // app/api/conversation/[conversationId]/route.ts
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../chat-backend/db';
 
@@ -9,9 +10,13 @@ interface Conversation {
   createdAt: Date;
 }
 
-export async function GET(request: Request, { params }: { params: { conversationId: string } }) {
-  // Decode the conversationId to avoid double-encoding issues.
-  const decodedConversationId = decodeURIComponent(params.conversationId);
+export async function GET(
+  request: NextRequest,
+  context: { params: { conversationId: string } }
+): Promise<NextResponse> {
+  // Extract and decode the conversationId from the route parameters.
+  const { conversationId } = context.params;
+  const decodedConversationId = decodeURIComponent(conversationId);
 
   if (!decodedConversationId) {
     return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
