@@ -11,10 +11,11 @@ interface Conversation {
 
 export async function GET(
   request: Request,
-  { params }: { params: { conversationId: string } }
+  context: { params: Record<string, string> }
 ): Promise<NextResponse> {
-  // Decode the conversationId to avoid double-encoding issues.
-  const decodedConversationId = decodeURIComponent(params.conversationId);
+  // Get the conversationId from the params
+  const { conversationId } = context.params;
+  const decodedConversationId = decodeURIComponent(conversationId);
 
   if (!decodedConversationId) {
     return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
@@ -22,9 +23,9 @@ export async function GET(
 
   try {
     const db = await connectDB();
-    // Tell TypeScript our documents use string IDs.
+    // Tell TypeScript that our documents use string IDs
     const conversationsCollection = db.collection<Conversation & { _id: string }>('conversations');
-    // We disable the no-explicit-any rule on this line because our _id is a custom string.
+    // We cast decodedConversationId to any to override the default ObjectId expectation
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conversation = await conversationsCollection.findOne({ _id: decodedConversationId as any });
     const messages = conversation?.messages ?? [];
