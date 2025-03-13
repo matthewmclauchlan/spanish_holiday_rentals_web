@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Message {
@@ -22,7 +21,6 @@ export default function SupportDashboard() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     async function fetchSupportConversations() {
@@ -35,8 +33,12 @@ export default function SupportDashboard() {
         } else {
           setConversations(data.conversations || []);
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Unknown error');
+        }
       } finally {
         setLoading(false);
       }
@@ -59,24 +61,24 @@ export default function SupportDashboard() {
             return (
               <li key={conv._id}>
                 <Link href={`/chat/${encodeURIComponent(conv._id)}`}>
-  <div className="block p-4 border rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-    <div className="flex justify-between">
-      <span className="font-medium text-gray-800 dark:text-white">
-        Conversation: {conv._id}
-      </span>
-      {lastMessage && (
-        <span className="text-sm text-gray-500">
-          {new Date(lastMessage.timestamp).toLocaleString()}
-        </span>
-      )}
-    </div>
-    {lastMessage && (
-      <p className="mt-2 text-gray-600 dark:text-gray-300">
-        Last message: {lastMessage.content}
-      </p>
-    )}
-  </div>
-</Link>
+                  <div className="block p-4 border rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-800 dark:text-white">
+                        Conversation: {conv._id}
+                      </span>
+                      {lastMessage && (
+                        <span className="text-sm text-gray-500">
+                          {new Date(lastMessage.timestamp).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {lastMessage && (
+                      <p className="mt-2 text-gray-600 dark:text-gray-300">
+                        Last message: {lastMessage.content}
+                      </p>
+                    )}
+                  </div>
+                </Link>
               </li>
             );
           })}

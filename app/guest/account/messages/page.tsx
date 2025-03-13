@@ -1,10 +1,8 @@
-// app/guest/account/messages/page.tsx (or wherever your conversation list is)
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 interface Message {
   senderId: string;
@@ -16,7 +14,7 @@ export interface Conversation {
   _id: string;
   participants: string[];
   messages: Message[];
-  conversationType?: string; // This field will be "support" if it's a support conversation
+  conversationType?: string; // "support" if it's a support conversation
 }
 
 export default function ConversationListPage() {
@@ -24,7 +22,6 @@ export default function ConversationListPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     async function fetchConversations() {
@@ -38,8 +35,12 @@ export default function ConversationListPage() {
         } else {
           setConversations(data.conversations || []);
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Unknown error');
+        }
       } finally {
         setLoading(false);
       }
@@ -61,7 +62,7 @@ export default function ConversationListPage() {
             const lastMessage = conv.messages[conv.messages.length - 1];
             return (
               <li key={conv._id}>
-                <Link href={`/chat/${conv._id}`}>
+                <Link href={`/chat/${encodeURIComponent(conv._id)}`}>
                   <div className="block p-4 border rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
                     <div className="flex justify-between">
                       <span className="font-medium text-gray-800 dark:text-white">
