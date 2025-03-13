@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { account, databases, config, getPropertyById, getImageUrl } from '../../../../lib/appwrite';
 import { Models } from 'appwrite';
 import Image from 'next/image';
-import Link from 'next/link';
+
 
 interface Booking extends Models.Document {
   bookingReference: string;
