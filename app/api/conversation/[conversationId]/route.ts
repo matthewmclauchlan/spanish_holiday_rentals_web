@@ -11,10 +11,9 @@ interface Conversation {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Record<string, string> }
+  context: { params: { conversationId: string } }
 ): Promise<NextResponse> {
-  // Extract conversationId from params and decode it.
-  const conversationId = params.conversationId;
+  const { conversationId } = context.params;
   const decodedConversationId = decodeURIComponent(conversationId);
 
   if (!decodedConversationId) {
