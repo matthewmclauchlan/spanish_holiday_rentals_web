@@ -1,14 +1,20 @@
 // app/api/conversation/[conversationId]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../chat-backend/db';
 
+interface Conversation {
+  _id: string;
+  participants: string[];
+  messages: { senderId: string; content: string; timestamp: Date }[];
+  createdAt: Date;
+}
+
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ conversationId: string }> }
+  request: Request,
+  { params }: { params: { conversationId: string } }
 ): Promise<NextResponse> {
-  // Await the params (this works around the type error)
-  const { conversationId } = await context.params;
-  const decodedConversationId = decodeURIComponent(conversationId);
+  // Decode the conversationId to avoid double-encoding issues.
+  const decodedConversationId = decodeURIComponent(params.conversationId);
 
   if (!decodedConversationId) {
     return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
@@ -16,8 +22,11 @@ export async function GET(
 
   try {
     const db = await connectDB();
-    const conversationsCollection = db.collection('conversations');
-    const conversation = await conversationsCollection.findOne({ _id: decodedConversationId });
+    // Tell TypeScript our documents use string IDs.
+    const conversationsCollection = db.collection<Conversation & { _id: string }>('conversations');
+    // We disable the no-explicit-any rule on this line because our _id is a custom string.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const conversation = await conversationsCollection.findOne({ _id: decodedConversationId as any });
     const messages = conversation?.messages ?? [];
     return NextResponse.json({ messages }, { status: 200 });
   } catch (error: unknown) {
