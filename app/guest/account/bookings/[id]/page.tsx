@@ -6,7 +6,6 @@ import { account, databases, config, getPropertyById, getImageUrl } from '../../
 import { Models } from 'appwrite';
 import Image from 'next/image';
 
-
 interface Booking extends Models.Document {
   bookingReference: string;
   startDate: string;
@@ -51,12 +50,13 @@ export default function BookingDetailsPage() {
         );
         let propertyData: Property | undefined;
         try {
+          // Retrieve the property document. Here we assume propertyDoc returns its properties at the top level.
           const propertyDoc = await getPropertyById(response.propertyId);
-          if (propertyDoc && propertyDoc.fields) {
+          if (propertyDoc) {
             propertyData = {
               $id: propertyDoc.$id,
-              name: propertyDoc.fields.name,
-              mainImage: propertyDoc.fields.mainImage,
+              name: propertyDoc.name, // Use top-level 'name'
+              mainImage: propertyDoc.mainImage, // Use top-level 'mainImage'
             };
           }
         } catch {
@@ -67,7 +67,7 @@ export default function BookingDetailsPage() {
           property: propertyData,
         };
         setBooking(bookingWithProperty);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message);
         } else {

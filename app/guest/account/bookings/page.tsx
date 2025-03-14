@@ -40,8 +40,6 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<BookingWithProperty[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // Disable unused var warning for setCurrentPage since it's used in inline handlers.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
   const [total, setTotal] = useState<number>(0);
@@ -69,17 +67,10 @@ export default function BookingsPage() {
           response.documents.map(async (booking) => {
             try {
               const propertyDoc = await getPropertyById(booking.propertyId);
-              if (propertyDoc && propertyDoc.fields) {
-                return {
-                  ...booking,
-                  property: {
-                    $id: propertyDoc.$id,
-                    name: propertyDoc.fields.name,
-                    mainImage: propertyDoc.fields.mainImage,
-                  },
-                } as BookingWithProperty;
-              }
-              return booking as BookingWithProperty;
+              return {
+                ...booking,
+                property: propertyDoc ? (propertyDoc as unknown as Property) : undefined,
+              } as BookingWithProperty;
             } catch {
               return booking as BookingWithProperty;
             }
@@ -183,6 +174,7 @@ export default function BookingsPage() {
                   key={page}
                   href={`?page=${page}`}
                   current={page === currentPage}
+                  onClick={() => setCurrentPage(page)}
                 >
                   {page}
                 </PaginationPage>
@@ -191,6 +183,7 @@ export default function BookingsPage() {
             <PaginationNext
               href={`?page=${currentPage + 1}`}
               disabled={currentPage >= Math.ceil(total / pageSize)}
+              onClick={() => setCurrentPage(currentPage + 1)}
             >
               Next
             </PaginationNext>

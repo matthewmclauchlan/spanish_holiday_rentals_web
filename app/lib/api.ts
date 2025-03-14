@@ -3,6 +3,7 @@ export interface Message {
     senderId: string;
     content: string;
     timestamp: string;
+    read?: boolean;
   }
   
   export async function getConversationMessages(conversationId: string): Promise<{ messages: Message[] }> {

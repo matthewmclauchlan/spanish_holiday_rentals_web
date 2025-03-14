@@ -37,8 +37,6 @@ app.get('/', (req, res) => {
 /* -------------------------------------------
    SUPPORT CONVERSATION API ENDPOINT
 ------------------------------------------- */
-// POST /createSupportConversation
-// Expects a JSON body: { bookingId: string, userId: string }
 app.post('/createSupportConversation', async (req, res) => {
   const { bookingId, userId } = req.body;
   if (!bookingId || !userId) {
@@ -58,8 +56,8 @@ app.post('/createSupportConversation', async (req, res) => {
         participants: [userId, 'support'], // 'support' represents the support agent/channel
         messages: [],
         conversationType: 'support',  // Explicitly mark this as a support conversation
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       await conversationsCollection.insertOne(conversation);
     }
@@ -73,8 +71,6 @@ app.post('/createSupportConversation', async (req, res) => {
 /* -------------------------------------------
    HOST CONVERSATIONS API ENDPOINT
 ------------------------------------------- */
-// GET /api/hostConversations?hostId=...
-// This endpoint returns all conversations that include the provided hostId in their participants array.
 app.get('/api/hostConversations', async (req, res) => {
   const { hostId } = req.query;
   if (!hostId || typeof hostId !== 'string') {
@@ -109,10 +105,12 @@ io.on('connection', (socket) => {
   // When a message is sent, save it to the conversation and emit to the room
   socket.on('sendMessage', async (data) => {
     const { conversationId, senderId, content } = data;
+    // Create the message with a default read flag set to false.
     const message = {
       senderId,
       content,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
+      read: false
     };
 
     try {
@@ -124,18 +122,36 @@ io.on('connection', (socket) => {
           _id: conversationId,
           participants: [senderId, 'support'],
           messages: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
         await conversationsCollection.insertOne(conversation);
       }
+      // Push the new message into the conversation
       await conversationsCollection.updateOne(
         { _id: conversationId },
-        { $push: { messages: message }, $set: { updatedAt: new Date() } }
+        { $push: { messages: message }, $set: { updatedAt: new Date().toISOString() } }
       );
+      // Emit the new message to all clients in the conversation room
       io.to(conversationId).emit('receiveMessage', message);
     } catch (error) {
       console.error('Error saving message:', error);
+    }
+  });
+
+  // When a message is marked as read, update the conversation in the database
+  socket.on('markAsRead', async (data) => {
+    const { conversationId, messageTimestamp } = data;
+    try {
+      const conversationsCollection = db.collection('conversations');
+      const updateResult = await conversationsCollection.updateOne(
+        { _id: conversationId, "messages.timestamp": messageTimestamp },
+        { $set: { "messages.$.read": true, updatedAt: new Date().toISOString() } }
+      );
+      console.log('Read update result:', updateResult);
+      io.to(conversationId).emit('messageRead', { messageTimestamp });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
     }
   });
 
