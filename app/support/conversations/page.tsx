@@ -1,22 +1,22 @@
-// app/support/conversations/page.tsx
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useAuth } from "../../context/AuthContext";
 
 interface Message {
   senderId: string;
   content: string;
   timestamp: string;
   read?: boolean;
+  senderAvatarUrl?: string;
 }
 
 export interface Conversation {
   _id: string;
   participants: string[];
   messages: Message[];
-  status: 'new' | 'unanswered' | 'in-progress' | 'resolved';
+  status: "new" | "unanswered" | "in-progress" | "resolved" | "paused";
   createdAt: string;
 }
 
@@ -24,7 +24,14 @@ interface RawConversation {
   _id: string;
   participants: string[];
   messages: Message[];
+  status?: string; // if not computed, it might be absent
   createdAt: string;
+}
+
+// Define the API response type for support conversations.
+interface SupportConversationsResponse {
+  conversations?: RawConversation[];
+  error?: string;
 }
 
 export default function SupportDashboard() {
@@ -33,25 +40,30 @@ export default function SupportDashboard() {
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'new' | 'unanswered' | 'in-progress' | 'resolved'>('all');
+  const [filter, setFilter] = useState<
+    "all" | "new" | "unanswered" | "in-progress" | "resolved" | "paused"
+  >("all");
 
   useEffect(() => {
     async function fetchSupportConversations() {
       if (!user) return;
       try {
-        const res = await fetch('/api/supportConversations');
-        const data = await res.json();
+        const res = await fetch("/api/supportConversations");
+        const data: SupportConversationsResponse = await res.json();
         if (data.error) {
           setError(data.error);
         } else if (data.conversations) {
-          // Narrow the type of raw conversation objects.
-          const rawConvs = data.conversations as RawConversation[];
-          const convs: Conversation[] = rawConvs.map((conv) => {
-            let status: Conversation['status'] = 'new';
-            if (conv.messages && conv.messages.length > 0) {
-              // Example logic: if a support reply exists, mark as "in-progress", else "unanswered"
-              const supportReply = conv.messages.find((msg) => msg.senderId === 'support');
-              status = supportReply ? 'in-progress' : 'unanswered';
+          // Use the support user ID from env or a fallback.
+          const supportUserId =
+            process.env.NEXT_PUBLIC_SUPPORT_USER_ID || "67d2eb99001ca2b957ce";
+          const convs: Conversation[] = data.conversations.map((conv: RawConversation) => {
+            // If conversation.status exists, use it. Otherwise, compute a status from messages.
+            let status: Conversation["status"] = (conv.status as Conversation["status"]) || "new";
+            if (!conv.status && conv.messages && conv.messages.length > 0) {
+              const supportReply = conv.messages.find(
+                (msg) => msg.senderId === supportUserId
+              );
+              status = supportReply ? "in-progress" : "unanswered";
             }
             return {
               _id: conv._id,
@@ -65,7 +77,8 @@ export default function SupportDashboard() {
           setFilteredConversations(convs);
         }
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -75,7 +88,7 @@ export default function SupportDashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (filter === 'all') {
+    if (filter === "all") {
       setFilteredConversations(conversations);
     } else {
       setFilteredConversations(
@@ -92,19 +105,21 @@ export default function SupportDashboard() {
       <h1 className="text-2xl font-bold mb-4">Support Dashboard</h1>
       <div className="mb-4">
         <span className="mr-2 font-medium">Filter:</span>
-        {(['all', 'new', 'unanswered', 'in-progress', 'resolved'] as const).map((f) => (
-          <label key={f} className="mr-4">
-            <input
-              type="radio"
-              name="filter"
-              value={f}
-              checked={filter === f}
-              onChange={() => setFilter(f)}
-              className="mr-1"
-            />
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </label>
-        ))}
+        {(["all", "new", "unanswered", "in-progress", "resolved", "paused"] as const).map(
+          (f) => (
+            <label key={f} className="mr-4">
+              <input
+                type="radio"
+                name="filter"
+                value={f}
+                checked={filter === f}
+                onChange={() => setFilter(f)}
+                className="mr-1"
+              />
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </label>
+          )
+        )}
       </div>
       {filteredConversations.length === 0 ? (
         <p>No support conversations found.</p>
@@ -120,10 +135,12 @@ export default function SupportDashboard() {
                       <span className="font-medium">ID: {conv._id}</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {lastMessage ? lastMessage.content : 'No messages yet'}
+                      {lastMessage ? lastMessage.content : "No messages yet"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(lastMessage ? lastMessage.timestamp : conv.createdAt).toLocaleString()}
+                      {new Date(
+                        lastMessage ? lastMessage.timestamp : conv.createdAt
+                      ).toLocaleString()}
                     </p>
                   </div>
                 </Link>

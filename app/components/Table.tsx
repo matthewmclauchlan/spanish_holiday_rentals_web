@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React from "react";
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   children: React.ReactNode;
@@ -6,7 +8,10 @@ interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
 
 export function Table({ children, className, ...props }: TableProps) {
   return (
-    <table className={`w-full border-collapse ${className || ''}`} {...props}>
+    <table
+      className={`w-full border-collapse ${className ?? ""}`}
+      {...props}
+    >
       {children}
     </table>
   );
@@ -43,7 +48,7 @@ interface TableHeaderProps extends React.ThHTMLAttributes<HTMLTableCellElement> 
 export function TableHeader({ children, className, ...props }: TableHeaderProps) {
   return (
     <th
-      className={`px-4 py-2 font-semibold text-left border-b border-gray-200 ${className || ''}`}
+      className={`px-4 py-2 font-semibold text-left border-b border-gray-200 dark:border-gray-700 ${className ?? ""}`}
       {...props}
     >
       {children}
@@ -56,6 +61,12 @@ interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   href?: string;
 }
 
+/**
+ * If you want row hover styles (like bg-blue-600 text-white), 
+ * pass them via `className` on TableRow.
+ * For example:
+ * <TableRow className="transition-colors hover:bg-blue-600 hover:text-white" ...>
+ */
 export function TableRow({ children, href, className, ...props }: TableRowProps) {
   const handleClick = () => {
     if (href) window.location.href = href;
@@ -64,7 +75,8 @@ export function TableRow({ children, href, className, ...props }: TableRowProps)
   return (
     <tr
       onClick={href ? handleClick : undefined}
-      className={`cursor-pointer hover:bg-gray-50 ${className || ''}`}
+      // Removed default hover styling so you can pass your own in className
+      className={`cursor-pointer ${className ?? ""}`}
       {...props}
     >
       {children}
@@ -78,7 +90,10 @@ interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
 
 export function TableCell({ children, className, ...props }: TableCellProps) {
   return (
-    <td className={`px-4 py-2 border-b border-gray-200 ${className || ''}`} {...props}>
+    <td
+      className={`px-4 py-2 border-b border-gray-200 dark:border-gray-700 ${className ?? ""}`}
+      {...props}
+    >
       {children}
     </td>
   );

@@ -1,166 +1,197 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const { connectDB } = require('./db');
+import 'dotenv/config';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import { ObjectId } from 'mongodb';
+import { connectDB } from './db.js';
+import * as sdk from 'node-appwrite';
 
+// Setup App and Middleware
 const app = express();
 app.use(cors());
-app.use(express.json()); // For parsing JSON bodies
+app.use(express.json());
 
-// Create HTTP server and set up Socket.IO with CORS options
-const server = http.createServer(app);
-const io = new socketIo.Server(server, {
-  cors: {
-    origin: '*', // Adjust for production
-    methods: ['GET', 'POST'],
-  },
-});
-
-// Connect to MongoDB Atlas and store the database instance
+// Connect to MongoDB
 let db;
 connectDB()
   .then((database) => {
     db = database;
+    console.log('✅ Connected to MongoDB!');
   })
   .catch((err) => {
-    console.error('Failed to connect to MongoDB:', err);
+    console.error('MongoDB connection error:', err);
     process.exit(1);
   });
 
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.send('Chat Backend is running!');
+// Appwrite Client Setup
+const client = new sdk.Client();
+client
+  .setEndpoint(process.env.APPWRITE_ENDPOINT)
+  .setProject(process.env.APPWRITE_PROJECT_ID)
+  .setKey(process.env.APPWRITE_SECRET_API_KEY);
+
+const databases = new sdk.Databases(client);
+
+// Health check
+app.get('/', (req, res) => res.send('Chat Backend is running!'));
+
+// Fetch Booking Details from Appwrite by `bookingId`
+app.get('/api/bookings/:bookingId', async (req, res) => {
+  const { bookingId } = req.params;
+  try {
+    console.log(`🔍 Fetching booking from Appwrite for ID: ${bookingId}`);
+    const response = await databases.getDocument(
+      process.env.APPWRITE_DATABASE_ID,
+      process.env.APPWRITE_BOOKINGS_COLLECTION_ID,
+      bookingId
+    );
+    if (!response) {
+      console.log(`❌ No booking found for ID: ${bookingId}`);
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    res.json({
+      bookingId: response.$id,
+      propertyId: response.propertyId || "N/A",
+      checkInDate: response.startDate || "N/A",
+      checkOutDate: response.endDate || "N/A",
+      paymentStatus: response.paymentId ? "Paid" : "Unpaid",
+      status: response.status || "N/A",
+      totalAmount: response.appliedPriceRuleIds?.length > 0 ? calculateTotal(response.appliedPriceRuleIds) : undefined,
+      currency: "€",
+    });
+  } catch (error) {
+    console.error("❌ Error fetching booking:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
-/* -------------------------------------------
-   SUPPORT CONVERSATION API ENDPOINT
-------------------------------------------- */
+// Support Conversation API
 app.post('/createSupportConversation', async (req, res) => {
   const { bookingId, userId } = req.body;
   if (!bookingId || !userId) {
+    console.log('❌ Missing bookingId or userId:', { bookingId, userId });
     return res.status(400).json({ error: 'bookingId and userId are required' });
   }
-
   try {
+    console.log('✅ Creating support conversation for booking:', bookingId);
     const conversationsCollection = db.collection('conversations');
-    // Create a unique conversation ID for support (e.g. "bookingId-userId-support")
-    const conversationId = `${bookingId}-${userId}-support`;
-
-    // Check if the conversation already exists
+    // Use support user's membership id instead of literal "support"
+    const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
+    const conversationId = `${bookingId}-${userId}-${supportUserId}-support`;
     let conversation = await conversationsCollection.findOne({ _id: conversationId });
     if (!conversation) {
       conversation = {
         _id: conversationId,
-        participants: [userId, 'support'], // 'support' represents the support agent/channel
+        participants: [userId, supportUserId],
         messages: [],
-        conversationType: 'support',  // Explicitly mark this as a support conversation
+        bookingId,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
       await conversationsCollection.insertOne(conversation);
     }
+    console.log('✅ Created support conversation:', conversation);
     res.json({ conversationId });
   } catch (error) {
-    console.error('Error creating support conversation:', error);
+    console.error('❌ Error creating support conversation:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-/* -------------------------------------------
-   HOST CONVERSATIONS API ENDPOINT
-------------------------------------------- */
-app.get('/api/hostConversations', async (req, res) => {
-  const { hostId } = req.query;
-  if (!hostId || typeof hostId !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid hostId query parameter' });
-  }
-
+// Fetch Conversation and Booking Details Together
+app.get('/api/bookings/:conversationId', async (req, res) => {
+  const { conversationId } = req.params;
+  const bookingId = conversationId.split('-')[0];
+  console.log(`🔍 Extracted bookingId for Appwrite: ${bookingId}`);
   try {
-    const conversationsCollection = db.collection('conversations');
-    // Find all conversations where the participants array includes the hostId.
-    const conversations = await conversationsCollection.find({
-      participants: hostId
-    }).toArray();
-    res.json({ conversations });
+    const booking = await databases.getDocument(
+      process.env.APPWRITE_DATABASE_ID,
+      process.env.APPWRITE_BOOKINGS_COLLECTION_ID,
+      bookingId
+    );
+    res.json({ booking });
   } catch (error) {
-    console.error('Error fetching host conversations:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ Appwrite error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-/* -------------------------------------------
-   SOCKET.IO HANDLERS
-------------------------------------------- */
-io.on('connection', (socket) => {
-  console.log('New client connected:', socket.id);
+// Socket.IO Setup
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
-  // When a client joins a conversation room
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
   socket.on('joinConversation', (conversationId) => {
     socket.join(conversationId);
     console.log(`Socket ${socket.id} joined conversation ${conversationId}`);
+    // Log current members in the conversation room
+    const roomMembers = io.sockets.adapter.rooms.get(conversationId);
+    console.log(`Room ${conversationId} current members:`, roomMembers);
   });
 
-  // When a message is sent, save it to the conversation and emit to the room
-  socket.on('sendMessage', async (data) => {
-    const { conversationId, senderId, content } = data;
-    // Create the message with a default read flag set to false.
+  socket.on('sendMessage', async (data, callback) => {
+    const { conversationId, senderId, content, timestamp, bookingId, senderAvatarUrl } = data;
+    console.log(`Received sendMessage from ${senderId} for conversation ${conversationId}`);
+    
     const message = {
+      messageId: new ObjectId().toHexString(),
       senderId,
       content,
-      timestamp: new Date().toISOString(),
-      read: false
+      timestamp,
+      read: false,
+      status: 'sent',
+      bookingId,
+      senderAvatarUrl, // <-- New field added here
     };
-
+    
     try {
       const conversationsCollection = db.collection('conversations');
-      let conversation = await conversationsCollection.findOne({ _id: conversationId });
+      // Ensure conversation exists before adding messages
+      const conversation = await conversationsCollection.findOne({ _id: conversationId });
       if (!conversation) {
-        // If conversation doesn't exist, create it (this should rarely happen if using the API endpoint)
-        conversation = {
+        console.log(`Conversation ${conversationId} not found. Creating a new one.`);
+        await conversationsCollection.insertOne({
           _id: conversationId,
-          participants: [senderId, 'support'],
+          participants: [senderId, process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce'],
           messages: [],
+          bookingId,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        await conversationsCollection.insertOne(conversation);
+          updatedAt: new Date().toISOString(),
+        });
       }
-      // Push the new message into the conversation
+      // Push message into MongoDB
       await conversationsCollection.updateOne(
         { _id: conversationId },
         { $push: { messages: message }, $set: { updatedAt: new Date().toISOString() } }
       );
-      // Emit the new message to all clients in the conversation room
+      
+      // Emit the message to all clients in the room
       io.to(conversationId).emit('receiveMessage', message);
+      callback({ success: true });
     } catch (error) {
-      console.error('Error saving message:', error);
+      console.error('❌ Error saving message:', error);
+      callback({ success: false });
     }
   });
-
-  // When a message is marked as read, update the conversation in the database
-  socket.on('markAsRead', async (data) => {
-    const { conversationId, messageTimestamp } = data;
+  
+  socket.on('markAsRead', async ({ conversationId, messageId }) => {
     try {
       const conversationsCollection = db.collection('conversations');
-      const updateResult = await conversationsCollection.updateOne(
-        { _id: conversationId, "messages.timestamp": messageTimestamp },
-        { $set: { "messages.$.read": true, updatedAt: new Date().toISOString() } }
+      await conversationsCollection.updateOne(
+        { _id: conversationId, 'messages.messageId': messageId },
+        { $set: { 'messages.$.read': true, updatedAt: new Date().toISOString() } }
       );
-      console.log('Read update result:', updateResult);
-      io.to(conversationId).emit('messageRead', { messageTimestamp });
+      io.to(conversationId).emit('messageRead', { messageId });
     } catch (error) {
-      console.error('Error marking message as read:', error);
+      console.error('❌ Error marking message as read:', error);
     }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
   });
 });
 
-// Start the server on port 4000
+// Start Backend Server
 server.listen(4000, () => {
-  console.log('Socket.IO server running on port 4000');
+  console.log('✅ Backend running on port 4000');
 });

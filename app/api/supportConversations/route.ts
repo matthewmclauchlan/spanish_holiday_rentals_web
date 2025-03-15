@@ -1,4 +1,3 @@
-// app/api/supportConversations/route.ts
 import { NextResponse } from 'next/server';
 import { connectDB } from '../../../chat-backend/db';
 
@@ -8,8 +7,13 @@ export async function GET(_request: Request) {
   try {
     const db = await connectDB();
     const conversationsCollection = db.collection('conversations');
-    // Query for conversations where the participants array includes "support"
-    const conversations = await conversationsCollection.find({ participants: 'support' }).toArray();
+
+    // Use the actual support user id rather than "support"
+    const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
+    const conversations = await conversationsCollection
+      .find({ participants: supportUserId })
+      .toArray();
+      
     return NextResponse.json({ conversations }, { status: 200 });
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : 'Unknown error';

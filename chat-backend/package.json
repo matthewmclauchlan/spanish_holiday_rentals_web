@@ -10,13 +10,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "chat-backend": "file:",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongodb": "^5.4.1",
+    "node-appwrite": "^15.0.1",
     "socket.io": "^4.8.1"
   }
 }

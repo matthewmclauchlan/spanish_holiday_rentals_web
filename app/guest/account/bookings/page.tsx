@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { account, databases, config, getPropertyById, getImageUrl } from '../../../lib/appwrite';
-import { Query, Models } from 'appwrite';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/Table';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { account, databases, config, getPropertyById, getImageUrl } from "../../../lib/appwrite";
+import { Query, Models } from "appwrite";
+import Link from "next/link";
+import Image from "next/image";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/Table";
 import {
   Pagination,
   PaginationList,
   PaginationNext,
   PaginationPage,
   PaginationPrevious,
-} from '../../../components/Pagination';
-import { ExtendedUser } from '../../../context/AuthContext';
+} from "../../../components/Pagination";
+import { ExtendedUser } from "../../../context/AuthContext";
 
 interface Booking extends Models.Document {
   bookingReference: string;
@@ -56,7 +56,7 @@ export default function BookingsPage() {
           config.databaseId,
           config.bookingsCollectionId,
           [
-            Query.equal('userId', loggedInUser.$id),
+            Query.equal("userId", loggedInUser.$id),
             Query.limit(pageSize),
             Query.offset(offset),
           ]
@@ -81,7 +81,7 @@ export default function BookingsPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError('Unable to load data.');
+          setError("Unable to load data.");
         }
       } finally {
         setLoading(false);
@@ -90,31 +90,37 @@ export default function BookingsPage() {
     fetchUserAndBookings();
   }, [currentPage]);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (loading) {
+    return <div className="dark:text-gray-100">Loading...</div>;
+  }
+  if (error) {
+    return <div className="text-red-500 dark:text-red-400">Error: {error}</div>;
+  }
 
   return (
-    <div className="p-4">
+    <div className="p-4 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Your Bookings</h1>
       {!user ? (
         <div>
           <p>You need to log in to view your bookings.</p>
-          <Link href="/signin">Sign In</Link>
+          <Link href="/signin" className="text-blue-500 hover:underline">
+            Sign In
+          </Link>
         </div>
       ) : bookings.length === 0 ? (
         <div>
           <p>No trips booked... yet!</p>
           <button
-            onClick={() => router.push('/explore')}
-            className="text-blue-600 hover:underline"
+            onClick={() => router.push("/explore")}
+            className="text-blue-500 hover:underline"
           >
             Start searching
           </button>
           <p>
-            Can’t find your reservation here?{' '}
+            Can’t find your reservation here?{" "}
             <Link
               href="/help/how-to-get-started-with-spanish-holiday-rentals"
-              className="text-blue-600 hover:underline"
+              className="text-blue-500 hover:underline"
             >
               Visit the Help Center
             </Link>
@@ -122,7 +128,7 @@ export default function BookingsPage() {
         </div>
       ) : (
         <>
-          <Table className="[--gutter:1.5rem]">
+          <Table className="w-full border-collapse dark:bg-gray-800 dark:text-gray-100">
             <TableHead>
               <TableRow>
                 <TableHeader>Property</TableHeader>
@@ -132,7 +138,12 @@ export default function BookingsPage() {
             </TableHead>
             <TableBody>
               {bookings.map((booking) => (
-                <TableRow key={booking.$id} href={`/guest/account/bookings/${booking.$id}`}>
+                <TableRow
+                  key={booking.$id}
+                  href={`/guest/account/bookings/${booking.$id}`}
+                  // Add these hover classes to highlight the row in blue
+                  className="transition-colors hover:bg-blue-600 hover:text-white cursor-pointer"
+                >
                   <TableCell>
                     <div className="flex items-center gap-4">
                       {booking.property?.mainImage ? (
@@ -141,17 +152,17 @@ export default function BookingsPage() {
                           alt={booking.property.name}
                           width={100}
                           height={100}
-                          className="rounded-md"
+                          className="rounded-md object-cover"
                         />
                       ) : (
-                        <div className="w-10 h-10 bg-gray-300 rounded-md"></div>
+                        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-md"></div>
                       )}
-                      <div className="font-medium text-gray-800 dark:text-white">
+                      <div className="font-medium text-gray-800 dark:text-gray-100">
                         {booking.property?.name || "Unknown Property"}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium text-gray-800 dark:text-white">
+                  <TableCell className="font-medium text-gray-800 dark:text-gray-100">
                     {booking.bookingReference}
                   </TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-300">
@@ -161,29 +172,44 @@ export default function BookingsPage() {
               ))}
             </TableBody>
           </Table>
-          <Pagination className="mt-6">
+
+          <Pagination className="mt-6 flex items-center gap-2">
             <PaginationPrevious
               href={`?page=${currentPage - 1}`}
               disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              // Styles for background + white text + border
+              className="bg-blue-600 border border-blue-700 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               Prev
             </PaginationPrevious>
-            <PaginationList>
+
+            <PaginationList className="flex items-center gap-1">
               {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => i + 1).map((page) => (
                 <PaginationPage
                   key={page}
                   href={`?page=${page}`}
                   current={page === currentPage}
                   onClick={() => setCurrentPage(page)}
+                  // Style for each page number
+                  className={`px-3 py-1 rounded transition-colors ${
+                    page === currentPage
+                      ? "bg-blue-700 text-white"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
                 >
                   {page}
                 </PaginationPage>
               ))}
             </PaginationList>
+
             <PaginationNext
               href={`?page=${currentPage + 1}`}
               disabled={currentPage >= Math.ceil(total / pageSize)}
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(total / pageSize)))
+              }
+              className="bg-blue-600 border border-blue-700 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               Next
             </PaginationNext>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { account, databases, config, getPropertyById, getImageUrl } from '../../../../lib/appwrite';
-import { Models } from 'appwrite';
-import Image from 'next/image';
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import { account, databases, config, getImageUrl } from "../../../../lib/appwrite";
+import { Models } from "appwrite";
 
 interface Booking extends Models.Document {
   bookingReference: string;
@@ -15,8 +15,7 @@ interface Booking extends Models.Document {
   propertyId: string;
 }
 
-interface Property {
-  $id: string;
+interface Property extends Models.Document {
   name: string;
   mainImage?: string;
 }
@@ -28,51 +27,65 @@ interface BookingWithProperty extends Booking {
 export default function BookingDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  // Ensure bookingId is a string
   const bookingId = Array.isArray(params.id) ? params.id[0] : params.id;
+
   const [booking, setBooking] = useState<BookingWithProperty | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleSupport = async () => {
+    if (!booking || !booking.$id) {
+      console.error("Booking data or booking ID is missing:", booking);
+      setError("Booking ID is missing. Please try again.");
+      return;
+    }
+
+    try {
+      const userData = await account.get();
+      const docId = booking.$id; // Use document ID
+      const response = await fetch("http://localhost:4000/createSupportConversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: docId, userId: userData.$id }),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.conversationId) {
+        router.push(`/chat/${data.conversationId}`);
+      } else {
+        setError(data.error || "Unable to create support conversation.");
+      }
+    } catch (err) {
+      console.error("Error contacting support:", err);
+      setError("Error contacting support. Please try again later.");
+    }
+  };
 
   useEffect(() => {
     async function fetchBookingDetails() {
       if (!bookingId) {
-        setError('Booking ID not provided.');
+        setError("Booking ID not provided.");
         setLoading(false);
         return;
       }
       try {
-        // Fetch the booking document using bookingId
-        const response = await databases.getDocument<Booking>(
+        const bookingDoc = await databases.getDocument<Booking>(
           config.databaseId,
           config.bookingsCollectionId,
-          bookingId as string
+          bookingId
         );
-        let propertyData: Property | undefined;
-        try {
-          // Retrieve the property document. Here we assume propertyDoc returns its properties at the top level.
-          const propertyDoc = await getPropertyById(response.propertyId);
-          if (propertyDoc) {
-            propertyData = {
-              $id: propertyDoc.$id,
-              name: propertyDoc.name, // Use top-level 'name'
-              mainImage: propertyDoc.mainImage, // Use top-level 'mainImage'
-            };
-          }
-        } catch {
-          // If property details aren't available, leave propertyData undefined.
+        let propertyDoc: Property | undefined;
+        if (bookingDoc.propertyId) {
+          propertyDoc = await databases.getDocument<Property>(
+            config.databaseId,
+            config.propertiesCollectionId,
+            bookingDoc.propertyId
+          );
         }
-        const bookingWithProperty: BookingWithProperty = {
-          ...response,
-          property: propertyData,
-        };
-        setBooking(bookingWithProperty);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('Unable to load booking details.');
-        }
+        setBooking({ ...bookingDoc, property: propertyDoc });
+      } catch (err) {
+        console.error(err);
+        setError("Error loading booking details.");
       } finally {
         setLoading(false);
       }
@@ -80,75 +93,122 @@ export default function BookingDetailsPage() {
     fetchBookingDetails();
   }, [bookingId]);
 
-  const handleSupport = async () => {
-    try {
-      // Fetch the logged-in user's data
-      const userData = await account.get();
-      // Call the support conversation API endpoint on your backend
-      const response = await fetch('http://localhost:4000/createSupportConversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ bookingId, userId: userData.$id }),
-      });
-      const data = await response.json();
-      if (data.conversationId) {
-        // Navigate to the chat page for the created conversation
-        router.push(`/chat/${data.conversationId}`);
-      } else {
-        alert('Failed to create support conversation.');
-      }
-    } catch (error) {
-      console.error('Error creating support conversation:', error);
-    }
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error || !booking) return <div className="text-red-500">Error: {error || 'Booking not found'}</div>;
+  if (loading) {
+    return (
+      <div className="dark:bg-gray-900 dark:text-gray-100 min-h-screen p-4">
+        Loading...
+      </div>
+    );
+  }
+  if (error || !booking) {
+    return (
+      <div className="dark:bg-gray-900 dark:text-gray-100 min-h-screen p-4">
+        <p className="text-red-500">{error || "Booking not found"}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-semibold mb-6">Booking Details</h1>
-      <div className="border p-4 rounded-lg bg-white dark:bg-gray-800">
-        {booking.property ? (
-          <div className="flex items-center gap-4">
-            {booking.property.mainImage ? (
-              <Image
-                src={getImageUrl(booking.property.mainImage)}
-                alt={booking.property.name}
-                width={100}
-                height={100}
-                className="rounded-md"
-              />
-            ) : (
-              <div className="w-10 h-10 bg-gray-300 rounded-md"></div>
-            )}
-            <div className="font-medium text-gray-800 dark:text-white">
-              {booking.property.name}
+    <div className="dark:bg-gray-900 dark:text-gray-100 min-h-screen p-4">
+      {/* Container for responsiveness */}
+      <div className="max-w-xl mx-auto">
+        <h1 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-50">
+          Booking Details
+        </h1>
+
+        <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700 space-y-4">
+          {/* Property Details */}
+          {booking.property && (
+            <div className="flex items-center gap-4">
+              {booking.property.mainImage && (
+                <Image
+                  src={getImageUrl(booking.property.mainImage)}
+                  alt={booking.property.name}
+                  width={100}
+                  height={100}
+                  className="rounded-md object-cover"
+                />
+              )}
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+                {booking.property.name}
+              </h2>
             </div>
+          )}
+
+          {/* Booking Summary */}
+          <div>
+            <p className="text-gray-700 dark:text-gray-200">
+              <strong>Booking Reference:</strong> {booking.bookingReference}
+            </p>
+            <p className="text-gray-700 dark:text-gray-200">
+              <strong>Dates:</strong>{" "}
+              {new Date(booking.startDate).toLocaleDateString()} -{" "}
+              {new Date(booking.endDate).toLocaleDateString()}
+            </p>
+            <p className="text-gray-700 dark:text-gray-200">
+              <strong>Status:</strong> {booking.status}
+            </p>
+            <p className="text-gray-700 dark:text-gray-200">
+              <strong>Total:</strong> €{booking.totalPrice.toFixed(2)}
+            </p>
           </div>
-        ) : (
-          <p>Property details not available.</p>
-        )}
-        <p className="mt-4">
-          <strong>Booking Reference:</strong> {booking.bookingReference}
-        </p>
-        <p className="mt-2">
-          <strong>Dates:</strong> {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
-        </p>
-        <p className="mt-2">
-          <strong>Total Payment:</strong> €{booking.totalPrice.toFixed(2)}
-        </p>
-        <p className="mt-2">
-          <strong>Status:</strong> {booking.status}
-        </p>
-        <button
-          onClick={handleSupport}
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Need support with this booking? Contact Us
-        </button>
+
+          <hr className="border-gray-300 dark:border-gray-700" />
+
+          {/* Stay Details Placeholder */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+              Stay Details
+            </h3>
+            <p className="text-gray-700 dark:text-gray-200">
+              [Placeholder: Check-in instructions, guest capacity, amenities, etc.]
+            </p>
+          </div>
+
+          <hr className="border-gray-300 dark:border-gray-700" />
+
+          {/* Payment Details Placeholder */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+              Payment Details
+            </h3>
+            <p className="text-gray-700 dark:text-gray-200">
+              [Placeholder: Breakdown of total cost, taxes, fees, payment method, etc.]
+            </p>
+          </div>
+
+          <hr className="border-gray-300 dark:border-gray-700" />
+
+          {/* Property Details Placeholder */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+              Property Details
+            </h3>
+            <p className="text-gray-700 dark:text-gray-200">
+              [Placeholder: Full description of the property, images, location, map, amenities, etc.]
+            </p>
+          </div>
+
+          <hr className="border-gray-300 dark:border-gray-700" />
+
+          {/* Next Steps Placeholder */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+              Next Steps
+            </h3>
+            <p className="text-gray-700 dark:text-gray-200">
+              [Placeholder: ID submission instructions, check-in procedure, special requests,
+              contact info, etc.]
+            </p>
+          </div>
+
+          <button
+            onClick={handleSupport}
+            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+          >
+            Need Support? Contact Us
+          </button>
+        </div>
       </div>
     </div>
   );

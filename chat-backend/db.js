@@ -1,11 +1,14 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-require('dotenv').config({ path: '../.env' });
+import dotenv from 'dotenv';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+// Load environment variables
+dotenv.config({ path: '../.env' });
 
 const uri = process.env.MONGO_URI;
+const dbName = process.env.MONGO_DB_NAME || 'spanish_holiday_rentals';
+
 if (!uri) {
-  console.error('MONGO_URI is not defined in the environment');
+  console.error('❌ MONGO_URI is not defined in the environment');
   process.exit(1);
 }
 
@@ -17,19 +20,20 @@ const client = new MongoClient(uri, {
   },
 });
 
-let database;
+let databaseInstance = null;
 
 async function connectDB() {
-  try {
-    await client.connect();
-    console.log("Connected to MongoDB!");
-    // Replace 'chat-app' with your desired database name.
-    database = client.db('chat-app');
-    return database;
-  } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-    process.exit(1);
+  if (!databaseInstance) {
+    try {
+      await client.connect();
+      databaseInstance = client.db(dbName); // ✅ Correctly get database instance
+      console.log(`✅ Connected to MongoDB: ${dbName}`);
+    } catch (err) {
+      console.error('❌ Failed to connect to MongoDB:', err);
+      process.exit(1);
+    }
   }
+  return databaseInstance;
 }
 
-module.exports = { connectDB, client };
+export { client, connectDB };

@@ -7,9 +7,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Message {
+  messageId?: string;
   senderId: string;
   content: string;
   timestamp: string;
+  read?: boolean;
+  status?: 'sending' | 'sent' | 'failed';
+  bookingId?: string; // ✅ Ensure we store the booking ID inside messages
 }
 
 export interface Conversation {

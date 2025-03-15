@@ -1,44 +1,49 @@
-'use client';
+"use client";
 
-import { Disclosure, Menu } from '@headlessui/react';
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import { getAvatarUrl } from '../lib/appwrite';
+import { Disclosure, Menu } from "@headlessui/react";
+import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
+import { getAvatarUrl } from "../lib/appwrite";
 
 const guestNavigation = [
-  { name: 'Home', href: '/guest/home' },
-  { name: 'Explore', href: '/guest/explore' },
+  { name: "Home", href: "/guest/home" },
+  { name: "Explore", href: "/guest/explore" },
 ];
 
 const supportNavigation = [
-  { name: 'Support Dashboard', href: '/support' },
-  { name: 'Conversations', href: '/chat' },
+  { name: "Support Dashboard", href: "/support" },
+  { name: "Conversations", href: "/chat" },
 ];
 
 const guestDropdownNavigation = [
-  { name: 'Account', href: '/guest/account' },
-  { name: 'Booking History', href: '/guest/account/bookings' },
-  { name: 'Messages', href: '/chat' },
+  { name: "Account", href: "/guest/account" },
+  { name: "Booking History", href: "/guest/account/bookings" },
+  { name: "Messages", href: "/chat" },
+];
+
+const guestDropdownExtra = [
+  { name: "Become a Host", href: "/guest/become-a-host" },
 ];
 
 const supportDropdownNavigation = [
-  { name: 'Support Dashboard', href: '/support' },
-  { name: 'Conversations', href: '/chat' },
+  { name: "Support Dashboard", href: "/support" },
+  { name: "Conversations", href: "/chat" },
+  { name: "Personal Info", href: "/support/personal-info" },
 ];
 
 function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
+  return classes.filter(Boolean).join(" ");
 }
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
 
-  // Check if the logged-in user is a support user by verifying if their roles include 'support'
-  const isSupport = user?.roles.includes('support');
+  // Check if the logged-in user is a support user by verifying if their roles include "support"
+  const isSupport = user?.roles.includes("support");
   const navigationOptions = isSupport ? supportNavigation : guestNavigation;
   const dropdownOptions = isSupport ? supportDropdownNavigation : guestDropdownNavigation;
 
@@ -78,12 +83,12 @@ export default function Navbar() {
                       <Link
                         key={item.name}
                         href={item.href}
-                        aria-current={pathname === item.href ? 'page' : undefined}
+                        aria-current={pathname === item.href ? "page" : undefined}
                         className={classNames(
                           pathname === item.href
-                            ? 'bg-gray-900 text-white'
-                            : 'text-gray-300 dark:text-white hover:bg-gray-700 hover:text-white',
-                          'rounded-md px-3 py-2 text-sm font-medium'
+                            ? "bg-gray-900 text-white"
+                            : "text-gray-300 dark:text-white hover:bg-gray-700 hover:text-white",
+                          "rounded-md px-3 py-2 text-sm font-medium"
                         )}
                       >
                         {item.name}
@@ -131,8 +136,8 @@ export default function Navbar() {
                               <Link
                                 href={item.href}
                                 className={classNames(
-                                  active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                                  'block px-4 py-2 text-sm text-gray-700 dark:text-white'
+                                  active ? "bg-gray-100 dark:bg-gray-700" : "",
+                                  "block px-4 py-2 text-sm text-gray-700 dark:text-white"
                                 )}
                               >
                                 {item.name}
@@ -140,13 +145,30 @@ export default function Navbar() {
                             )}
                           </Menu.Item>
                         ))}
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                        {guestDropdownExtra.map((item) => (
+                          <Menu.Item key={item.name}>
+                            {({ active }) => (
+                              <Link
+                                href={item.href}
+                                className={classNames(
+                                  active ? "bg-gray-100 dark:bg-gray-700" : "",
+                                  "block px-4 py-2 text-sm text-gray-700 dark:text-white"
+                                )}
+                              >
+                                {item.name}
+                              </Link>
+                            )}
+                          </Menu.Item>
+                        ))}
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
                         <Menu.Item>
                           {({ active }) => (
                             <button
                               onClick={signOut}
                               className={classNames(
-                                active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                                'block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white'
+                                active ? "bg-gray-100 dark:bg-gray-700" : "",
+                                "block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white"
                               )}
                             >
                               Sign out
@@ -161,8 +183,8 @@ export default function Navbar() {
                             <Link
                               href="/signin"
                               className={classNames(
-                                active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                                'block px-4 py-2 text-sm text-gray-700 dark:text-white'
+                                active ? "bg-gray-100 dark:bg-gray-700" : "",
+                                "block px-4 py-2 text-sm text-gray-700 dark:text-white"
                               )}
                             >
                               Sign In
@@ -174,8 +196,8 @@ export default function Navbar() {
                             <Link
                               href="/signup"
                               className={classNames(
-                                active ? 'bg-gray-100 dark:bg-gray-700' : '',
-                                'block px-4 py-2 text-sm text-gray-700 dark:text-white'
+                                active ? "bg-gray-100 dark:bg-gray-700" : "",
+                                "block px-4 py-2 text-sm text-gray-700 dark:text-white"
                               )}
                             >
                               Sign Up
@@ -197,12 +219,12 @@ export default function Navbar() {
                   key={item.name}
                   as={Link}
                   href={item.href}
-                  aria-current={pathname === item.href ? 'page' : undefined}
+                  aria-current={pathname === item.href ? "page" : undefined}
                   className={classNames(
                     pathname === item.href
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 dark:text-white hover:bg-gray-700 hover:text-white',
-                    'block rounded-md px-3 py-2 text-base font-medium'
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-300 dark:text-white hover:bg-gray-700 hover:text-white",
+                    "block rounded-md px-3 py-2 text-base font-medium"
                   )}
                 >
                   {item.name}
