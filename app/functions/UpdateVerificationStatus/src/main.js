@@ -16,18 +16,29 @@ export default async function handler({ req, res, log, error }) {
 
     // Try to get the raw payload from either req.body or req.payload.
     const rawPayload = req.body || req.payload;
-    let payload = {};
+    if (!rawPayload) {
+      log("No payload provided.");
+      return res.json({ success: false, error: "No payload provided" });
+    }
+    
+    let payload;
     try {
-      payload = typeof rawPayload === "string" && rawPayload.trim() !== ""
-        ? JSON.parse(rawPayload)
-        : rawPayload;
+      payload =
+        typeof rawPayload === "string" && rawPayload.trim() !== ""
+          ? JSON.parse(rawPayload)
+          : rawPayload;
     } catch (parseError) {
       log("Error parsing payload: " + parseError.message);
       return res.json({ success: false, error: "Invalid JSON payload" });
     }
     log("Payload received: " + JSON.stringify(payload));
 
-    // Validate the webhook secret from the body.
+    // Check that the auth field exists in the payload.
+    if (!payload || !payload.auth) {
+      log("No auth field provided in the payload.");
+      return res.json({ success: false, error: "Missing auth field" });
+    }
+
     const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
     if (payload.auth !== expectedSecret) {
       log("Webhook secret mismatch. Received:", payload.auth);
