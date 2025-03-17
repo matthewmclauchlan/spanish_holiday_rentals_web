@@ -6,15 +6,15 @@ client
   .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
   .setKey(process.env.APPWRITE_API_KEY);
 
+const databases = new sdk.Databases(client);
+const collectionId = process.env.NEXT_PUBLIC_APPWRITE_GUEST_VERIFICATIONS_COLLECTION_ID;
+const databaseId = process.env.APPWRITE_DATABASE_ID;
+
 export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
-    // Log available keys and specific body properties for debugging.
-    log("Request keys: " + Object.keys(req).join(", "));
-    log("Raw req.bodyText: " + req.bodyText);
-    log("Raw req.bodyJson: " + JSON.stringify(req.bodyJson));
 
-    // Try to get the raw payload from req.bodyJson, req.bodyText, or req.body.
+    // Attempt to retrieve the payload from multiple keys.
     const rawPayload = req.bodyJson || req.bodyText || req.body;
     if (!rawPayload) {
       log("No payload provided.");
@@ -34,7 +34,81 @@ export default async function handler({ req, res, log, error }) {
     }
     
     log("Payload received: " + JSON.stringify(payload));
-    return res.json({ success: true, payload });
+
+    // Validate the webhook secret from the payload.
+    const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
+    if (!payload.auth || payload.auth !== expectedSecret) {
+      log("Webhook secret mismatch. Received:", payload.auth);
+      return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
+    }
+    log("Webhook secret validated.");
+
+    // Extract expected fields from payload.
+    const {
+      userId,
+      image,
+      status,
+      moderationComments,
+      decisionDate,
+      submissionDate,
+      approvedBy,
+      buttonFlag,
+    } = payload;
+
+    // Query for an existing verification document for the given user.
+    let verificationDoc;
+    try {
+      const result = await databases.listDocuments(
+        databaseId,
+        collectionId,
+        [sdk.Query.equal("userId", userId)]
+      );
+      log("Documents found: " + result.documents.length);
+      if (result.documents.length > 0) {
+        verificationDoc = result.documents[0];
+      }
+    } catch (fetchError) {
+      error("Error fetching verification document: " + fetchError.message);
+    }
+
+    let responseData;
+    if (verificationDoc) {
+      log("Updating existing document: " + verificationDoc.$id);
+      responseData = await databases.updateDocument(
+        databaseId,
+        collectionId,
+        verificationDoc.$id,
+        {
+          status,
+          moderationComments,
+          decisionDate,
+          submissionDate,
+          approvedBy,
+          buttonFlag,
+          image,
+        }
+      );
+    } else {
+      log("Creating new verification document.");
+      responseData = await databases.createDocument(
+        databaseId,
+        collectionId,
+        sdk.ID.unique(),
+        {
+          userId,
+          status,
+          moderationComments,
+          decisionDate,
+          submissionDate,
+          approvedBy,
+          buttonFlag,
+          image,
+        }
+      );
+    }
+
+    log("Verification document updated/created: " + JSON.stringify(responseData));
+    return res.json({ success: true, data: responseData });
   } catch (err) {
     error("Error in Cloud Function: " + err.message);
     return res.json({ success: false, error: err.message });
