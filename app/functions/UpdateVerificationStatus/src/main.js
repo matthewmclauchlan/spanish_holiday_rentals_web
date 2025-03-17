@@ -14,8 +14,17 @@ export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
 
-    // Parse the payload (assuming JSON)
-    const payload = req.body;
+    // Try to get the raw payload from either req.body or req.payload.
+    const rawPayload = req.body || req.payload;
+    let payload = {};
+    try {
+      payload = typeof rawPayload === "string" && rawPayload.trim() !== ""
+        ? JSON.parse(rawPayload)
+        : rawPayload;
+    } catch (parseError) {
+      log("Error parsing payload: " + parseError.message);
+      return res.json({ success: false, error: "Invalid JSON payload" });
+    }
     log("Payload received: " + JSON.stringify(payload));
 
     // Validate the webhook secret from the body.
