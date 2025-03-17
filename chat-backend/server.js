@@ -33,7 +33,7 @@ client
 
 const databases = new sdk.Databases(client);
 
-// Health check
+// Health check endpoint
 app.get('/', (req, res) => res.send('Chat Backend is running!'));
 
 // Fetch Booking Details from Appwrite by `bookingId`
@@ -76,7 +76,6 @@ app.post('/createSupportConversation', async (req, res) => {
   try {
     console.log('✅ Creating support conversation for booking:', bookingId);
     const conversationsCollection = db.collection('conversations');
-    // Use support user's membership id instead of literal "support"
     const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
     const conversationId = `${bookingId}-${userId}-${supportUserId}-support`;
     let conversation = await conversationsCollection.findOne({ _id: conversationId });
@@ -127,7 +126,6 @@ io.on('connection', (socket) => {
   socket.on('joinConversation', (conversationId) => {
     socket.join(conversationId);
     console.log(`Socket ${socket.id} joined conversation ${conversationId}`);
-    // Log current members in the conversation room
     const roomMembers = io.sockets.adapter.rooms.get(conversationId);
     console.log(`Room ${conversationId} current members:`, roomMembers);
   });
@@ -144,13 +142,12 @@ io.on('connection', (socket) => {
       read: false,
       status: 'sent',
       bookingId,
-      senderAvatarUrl, // <-- New field added here
+      senderAvatarUrl,
     };
     
     try {
       const conversationsCollection = db.collection('conversations');
-      // Ensure conversation exists before adding messages
-      const conversation = await conversationsCollection.findOne({ _id: conversationId });
+      let conversation = await conversationsCollection.findOne({ _id: conversationId });
       if (!conversation) {
         console.log(`Conversation ${conversationId} not found. Creating a new one.`);
         await conversationsCollection.insertOne({
@@ -162,13 +159,11 @@ io.on('connection', (socket) => {
           updatedAt: new Date().toISOString(),
         });
       }
-      // Push message into MongoDB
       await conversationsCollection.updateOne(
         { _id: conversationId },
         { $push: { messages: message }, $set: { updatedAt: new Date().toISOString() } }
       );
       
-      // Emit the message to all clients in the room
       io.to(conversationId).emit('receiveMessage', message);
       callback({ success: true });
     } catch (error) {
@@ -189,9 +184,33 @@ io.on('connection', (socket) => {
       console.error('❌ Error marking message as read:', error);
     }
   });
+
+  // New: Listen for sending a system message (e.g., notification of verification)
+  socket.on('sendSystemMessage', async (data) => {
+    const { conversationId, content } = data;
+    const systemMessage = {
+      messageId: new ObjectId().toHexString(),
+      senderId: "system",
+      content,
+      timestamp: new Date().toISOString(),
+      read: false,
+      status: "sent",
+      system: true, // flag to indicate this is a system message
+    };
+    try {
+      const conversationsCollection = db.collection('conversations');
+      await conversationsCollection.updateOne(
+        { _id: conversationId },
+        { $push: { messages: systemMessage }, $set: { updatedAt: new Date().toISOString() } }
+      );
+      io.to(conversationId).emit('receiveMessage', systemMessage);
+      console.log(`System message sent to conversation ${conversationId}`);
+    } catch (error) {
+      console.error("Error sending system message:", error);
+    }
+  });
 });
 
-// Start Backend Server
 server.listen(4000, () => {
   console.log('✅ Backend running on port 4000');
 });

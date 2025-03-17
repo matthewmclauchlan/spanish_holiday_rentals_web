@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { getAvatarUrl } from "../lib/appwrite"; // adjust path if needed
+import { getAvatarUrl } from "../lib/appwrite";
 
 interface ChatBubbleProps {
   content: string;
@@ -10,7 +10,8 @@ interface ChatBubbleProps {
   isSender: boolean; // true if the current user sent the message
   read?: boolean;    // whether the message has been read (for sent messages)
   status?: "sending" | "sent" | "failed";
-  senderAvatarUrl?: string; // This should be a file ID or full URL
+  senderAvatarUrl?: string; // file ID or full URL; for system messages, this may be undefined
+  system?: boolean;         // optional flag for system messages
 }
 
 export default function ChatBubble({
@@ -20,14 +21,19 @@ export default function ChatBubble({
   read = false,
   status,
   senderAvatarUrl,
+  system = false,
 }: ChatBubbleProps) {
-  const bubbleStyle = isSender
+  // If it's a system message, we can use a different style.
+  const bubbleStyle = system
+    ? "bg-gray-300 text-gray-700 italic self-center"
+    : isSender
     ? "bg-blue-600 text-white self-end dark:bg-blue-800"
     : "bg-gray-200 text-black self-start dark:bg-gray-700 dark:text-white";
 
+  // Use fallback avatar for non-system messages.
   const fallbackAvatar = "/assets/icons/avatar.png";
   let computedAvatarUrl = fallbackAvatar;
-  if (senderAvatarUrl && senderAvatarUrl.trim() !== "") {
+  if (!system && senderAvatarUrl && senderAvatarUrl.trim() !== "") {
     if (senderAvatarUrl.includes("assets/icons/avatar.png")) {
       computedAvatarUrl = fallbackAvatar;
     } else if (senderAvatarUrl.startsWith("http")) {
@@ -38,8 +44,8 @@ export default function ChatBubble({
   }
 
   return (
-    <div className={`flex items-end gap-2 ${isSender ? "justify-end" : "justify-start"}`}>
-      {!isSender && (
+    <div className={`flex items-end gap-2 ${system ? "justify-center" : (isSender ? "justify-end" : "justify-start")}`}>
+      {!isSender && !system && (
         <div className="relative w-8 h-8 rounded-full overflow-hidden">
           <Image
             src={computedAvatarUrl}
@@ -60,7 +66,7 @@ export default function ChatBubble({
           <span className="text-xs text-gray-500 dark:text-gray-300">
             {new Date(timestamp).toLocaleTimeString()}
           </span>
-          {isSender && (
+          {isSender && !system && (
             <span className="ml-2 text-xs font-bold">
               {status === "failed" ? (
                 <span className="text-red-500">✗ Failed</span>

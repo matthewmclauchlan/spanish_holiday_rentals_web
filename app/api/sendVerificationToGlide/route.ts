@@ -13,13 +13,13 @@ export async function POST(request: Request) {
           kind: "add-row-to-table", // mutation kind to add a new row
           tableName: process.env.GLIDE_GUEST_VERIFICATIONS_TABLE, // e.g., "native-table-Txvevn7ilRAqJ2iUvSIP"
           columnValues: {
-            "CAsxe": body.userId,            // userId column key
-            "BYcc9": body.verificationImage, // image column key
-            "1Btud": body.status,             // status column key (e.g., "pending")
-            "bgr70": body.submissionDate,
-            "DuLnH": body.userName,                 // new: user's name
-            "5u0Hp": body.userEmail,                       // new: user's email
-            "3R0Ft": body.userPhone 
+            "CAsxe": body.userId,                     // userId column key
+            "BYcc9": body.verificationImage,          // image column key
+            "1Btud": body.status,                     // status column key (e.g., "approved", "pending")
+            "bgr70": body.submissionDate,             // submission date column key
+            "DuLnH": body.userName,                   // user name column key
+            "5u0Hp": body.email,                      // email column key
+            "3R0Ft": body.phoneNumber                 // phone number column key
           }
         }
       ]

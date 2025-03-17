@@ -17,51 +17,64 @@ interface Conversation {
 }
 
 interface CreateSupportConversationRequest {
-  bookingId: string;
+  bookingId?: string; // present when guest initiates support for a booking
   userId: string;
+  initiatedBy?: "guest" | "support"; // new flag to differentiate who is starting the conversation
 }
 
 export async function POST(request: Request) {
-  const { bookingId, userId } = (await request.json()) as CreateSupportConversationRequest;
+  const { bookingId, userId, initiatedBy = "guest" } = (await request.json()) as CreateSupportConversationRequest;
 
-  if (!bookingId || !userId) {
+  if (!userId) {
     return NextResponse.json(
-      { error: 'bookingId and userId are required' },
+      { error: 'userId is required' },
       { status: 400 }
     );
   }
 
   try {
     const db = await connectDB();
-    // Removed the type argument since the collection function isn't generic.
     const conversationsCollection = db.collection('conversations');
 
-    // Normalize bookingId to avoid URL encoding issues
-    const normalizedBookingId = bookingId.replace(/\//g, '_');
+    let conversationId: string;
+    let conversationType: string;
 
-    // Use the guest's userId and the support user's membership id (from env or fallback)
-    const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
-    const conversationId: string = `${normalizedBookingId}-${userId}-${supportUserId}`;
+    if (initiatedBy === "guest" && bookingId) {
+      // Existing guest support conversation for a booking
+      const normalizedBookingId = bookingId.replace(/\//g, '_');
+      const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
+      conversationId = `${normalizedBookingId}-${userId}-${supportUserId}`;
+      conversationType = 'support';
+    } else if (initiatedBy === "support") {
+      // Support-initiated conversation
+      const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
+      conversationId = `support-${userId}-${supportUserId}`;
+      conversationType = 'support-initiated';
+    } else {
+      // Default case (verification, etc.)
+      conversationId = `verification-${userId}-${process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce'}`;
+      conversationType = 'verification';
+    }
 
     const conversation = await conversationsCollection.findOne({ _id: conversationId });
     if (!conversation) {
       const newConversation: Conversation = {
         _id: conversationId,
-        participants: [userId, supportUserId],
+        participants: [userId, process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce'],
         messages: [],
-        conversationType: 'support',
+        conversationType,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       await conversationsCollection.insertOne(newConversation);
-      console.log('✅ New support conversation created:', newConversation);
+      console.log('✅ New conversation created:', newConversation);
     } else {
-      console.log('ℹ️ Support conversation already exists:', conversation);
+      console.log('ℹ️ Conversation already exists:', conversation);
     }
     return NextResponse.json({ conversationId }, { status: 200 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error creating support conversation:', errorMessage);
+    console.error('Error creating conversation:', errorMessage);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
