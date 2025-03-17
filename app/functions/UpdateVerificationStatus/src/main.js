@@ -15,7 +15,7 @@ export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
 
-    // Retrieve the payload from one of the possible keys.
+    // Retrieve the payload.
     const rawPayload = req.bodyJson || req.bodyText || req.body;
     if (!rawPayload) {
       log("No payload provided.");
@@ -59,7 +59,7 @@ export default async function handler({ req, res, log, error }) {
       phoneNumber
     } = payload;
 
-    // Build payload for the verification document; only include defined values.
+    // Build payload for the verification document.
     const dataPayload = {
       userId,
       status,
@@ -74,7 +74,7 @@ export default async function handler({ req, res, log, error }) {
       ...(phoneNumber ? { phoneNumber } : {}),
     };
 
-    // Query for an existing verification document for the user.
+    // Query for an existing verification document for the given user.
     let verificationDoc;
     try {
       const result = await databases.listDocuments(
@@ -115,7 +115,7 @@ export default async function handler({ req, res, log, error }) {
     if (status === "approved" || status === "needs_info") {
       // Call the conversation creation endpoint.
       const createConvEndpoint = process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT || "http://localhost:4000/api/createSupportConversation";
-      const conversationPayload = { userId };
+      const conversationPayload = { userId }; // For verification, no bookingId is needed.
       let conversationId;
       try {
         const convResponse = await axios.post(createConvEndpoint, conversationPayload, {
@@ -135,7 +135,7 @@ export default async function handler({ req, res, log, error }) {
         systemContent = "Support has requested additional information regarding your verification. Please reply with a new image or additional details.";
       }
       
-      // Send system message if conversation exists.
+      // Trigger the system message.
       if (conversationId && systemContent) {
         const systemMessagePayload = {
           conversationId,
@@ -144,7 +144,10 @@ export default async function handler({ req, res, log, error }) {
         const chatEndpoint = process.env.SEND_SYSTEM_MESSAGE_ENDPOINT || "http://localhost:4000/api/sendSystemMessage";
         try {
           await axios.post(chatEndpoint, systemMessagePayload, {
-            headers: { "Content-Type": "application/json" }
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${process.env.GLIDE_API_KEY}`
+            }
           });
           log("System message triggered for conversation:", conversationId);
         } catch (chatError) {
