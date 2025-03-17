@@ -9,6 +9,10 @@ client
 export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
+    // Log available keys in the request object
+    log("Request keys: " + Object.keys(req).join(", "));
+    log("Raw req.body: " + req.body);
+    log("Raw req.payload: " + req.payload);
 
     // Try to get the raw payload from req.body or req.payload.
     const rawPayload = req.body || req.payload;
@@ -16,7 +20,7 @@ export default async function handler({ req, res, log, error }) {
       log("No payload provided.");
       return res.json({ success: false, error: "No payload provided" });
     }
-
+    
     let payload;
     try {
       payload = typeof rawPayload === "string" ? JSON.parse(rawPayload) : rawPayload;
