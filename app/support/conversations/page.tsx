@@ -55,7 +55,7 @@ export default function SupportDashboard() {
         } else if (data.conversations) {
           // Use the support user ID from env or a fallback.
           const supportUserId =
-            process.env.NEXT_PUBLIC_SUPPORT_USER_ID || "67d2eb99001ca2b957ce";
+            process.env.NEXT_PUBLIC_APPWRITE_SUPPORT_TEAM_ID || "67d2eb99001ca2b957ce";
           const convs: Conversation[] = data.conversations.map((conv: RawConversation) => {
             // If conversation.status exists, use it. Otherwise, compute a status from messages.
             let status: Conversation["status"] = (conv.status as Conversation["status"]) || "new";
