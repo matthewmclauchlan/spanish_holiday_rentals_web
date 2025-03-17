@@ -15,7 +15,11 @@ export async function POST(request: Request) {
           columnValues: {
             "CAsxe": body.userId,            // userId column key
             "BYcc9": body.verificationImage, // image column key
-            "1Btud": body.status             // status column key (e.g., "pending")
+            "1Btud": body.status,             // status column key (e.g., "pending")
+            "bgr70": body.submissionDate,
+            "DuLnH": body.userName,                 // new: user's name
+            "5u0Hp": body.userEmail,                       // new: user's email
+            "3R0Ft": body.userPhone 
           }
         }
       ]

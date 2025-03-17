@@ -1,15 +1,16 @@
-'use client';
-import React, { useState, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import Image from 'next/image';
-import axios from 'axios';
-import { storage, config } from '../lib/appwrite';
+"use client";
+
+import React, { useState, useRef } from "react";
+import { useAuth, ExtendedUser } from "../context/AuthContext";
+import Image from "next/image";
+import axios from "axios";
+import { storage, config } from "../lib/appwrite";
 
 const UserVerificationForm: React.FC = () => {
   const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,28 +28,33 @@ const UserVerificationForm: React.FC = () => {
       return;
     }
     setUploading(true);
-    setMessage('');
+    setMessage("");
     
     try {
       console.log("Using bucket:", config.verificationBucketId);
       // Upload the file to Appwrite storage.
       const uploadResponse = await storage.createFile(
         config.verificationBucketId, // Ensure this is correct.
-        'unique()', // Let Appwrite generate a unique ID
+        "unique()", // Let Appwrite generate a unique ID
         file
       );
       console.log("Upload response:", uploadResponse);
 
       // Construct a public URL for the uploaded file.
       const imageUrl = `${config.endpoint}/storage/buckets/${config.verificationBucketId}/files/${uploadResponse.$id}/view?project=${config.projectId}`;
-      // Prepare the verification data.
+      
+      // Prepare the verification data including submissionDate and extra fields.
       const verificationData = {
         userId: user.$id,
         verificationImage: imageUrl,
         status: "pending",
+        submissionDate: new Date().toISOString(),
+        userName: user.name || "",
+        email: user.email || "",
+        phoneNumber: (user as ExtendedUser).phone || ""
       };
 
-      await axios.post('/api/sendVerificationToGlide', verificationData);
+      await axios.post("/api/sendVerificationToGlide", verificationData);
       setMessage("Verification information submitted. Await approval.");
     } catch (error) {
       console.error("Error submitting verification data", error);

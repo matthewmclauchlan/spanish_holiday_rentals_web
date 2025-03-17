@@ -46,13 +46,11 @@ export default async function handler({ req, res, log, error }) {
     // Extract expected fields from payload.
     const {
       userId,
-      image,
       status,
       moderationComments,
       decisionDate,
       submissionDate,
       approvedBy,
-      buttonFlag,
     } = payload;
 
     // Query for an existing verification document for the given user.
@@ -84,8 +82,6 @@ export default async function handler({ req, res, log, error }) {
           decisionDate,
           submissionDate,
           approvedBy,
-          buttonFlag,
-          image,
         }
       );
     } else {
@@ -101,8 +97,6 @@ export default async function handler({ req, res, log, error }) {
           decisionDate,
           submissionDate,
           approvedBy,
-          buttonFlag,
-          image,
         }
       );
     }
