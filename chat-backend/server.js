@@ -185,30 +185,44 @@ io.on('connection', (socket) => {
     }
   });
 
-  // New: Listen for sending a system message (e.g., notification of verification)
-  socket.on('sendSystemMessage', async (data) => {
-    const { conversationId, content } = data;
+  // Add this endpoint in your server.js after your Socket.IO setup, before server.listen
+
+app.post('/api/sendSystemMessage', async (req, res) => {
+  try {
+    // Extract conversationId and content from the request body.
+    const { conversationId, content } = req.body;
+    if (!conversationId || !content) {
+      return res.status(400).json({ error: "Missing conversationId or content" });
+    }
+
+    // Create a system message object.
     const systemMessage = {
       messageId: new ObjectId().toHexString(),
-      senderId: "system",
+      senderId: "system",  // Use "system" (or a reserved ID) for system messages.
       content,
       timestamp: new Date().toISOString(),
       read: false,
       status: "sent",
-      system: true, // flag to indicate this is a system message
+      system: true  // Custom flag to indicate this is a system message.
     };
-    try {
-      const conversationsCollection = db.collection('conversations');
-      await conversationsCollection.updateOne(
-        { _id: conversationId },
-        { $push: { messages: systemMessage }, $set: { updatedAt: new Date().toISOString() } }
-      );
-      io.to(conversationId).emit('receiveMessage', systemMessage);
-      console.log(`System message sent to conversation ${conversationId}`);
-    } catch (error) {
-      console.error("Error sending system message:", error);
-    }
-  });
+
+    // Update the conversation document in MongoDB.
+    const conversationsCollection = db.collection('conversations');
+    await conversationsCollection.updateOne(
+      { _id: conversationId },
+      { $push: { messages: systemMessage }, $set: { updatedAt: new Date().toISOString() } }
+    );
+
+    // Emit the system message via Socket.IO to all clients in the conversation.
+    io.to(conversationId).emit("receiveMessage", systemMessage);
+
+    return res.json({ success: true, message: systemMessage });
+  } catch (err) {
+    console.error("Error in /api/sendSystemMessage:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 });
 
 server.listen(4000, () => {
