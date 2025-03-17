@@ -113,7 +113,9 @@ export default async function handler({ req, res, log, error }) {
     // If the status is "approved" or "needs_info", trigger a conversation and system message.
     if (status === "approved" || status === "needs_info") {
       // Use a default bookingId ("verification") for these cases.
-      const createConvEndpoint = process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT || "http://localhost:4000/api/createSupportConversation";
+      const createConvEndpoint =
+        process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT ||
+        "https://spanish-holiday-rentals-web.vercel.app/api/createSupportConversation";
       const conversationPayload = { bookingId: "verification", userId };
       let conversationId;
       try {
@@ -126,7 +128,7 @@ export default async function handler({ req, res, log, error }) {
         conversationId = convData.conversationId;
         log("Conversation created with ID:", conversationId);
       } catch (convError) {
-        error("Error creating conversation: " + convError.message);
+        error("Error creating conversation: " + (convError instanceof Error ? convError.message : convError));
       }
       
       // Prepare system message content.
@@ -142,7 +144,9 @@ export default async function handler({ req, res, log, error }) {
           conversationId,
           content: systemContent
         };
-        const chatEndpoint = process.env.SEND_SYSTEM_MESSAGE_ENDPOINT || "http://localhost:4000/api/sendSystemMessage";
+        const chatEndpoint =
+          process.env.SEND_SYSTEM_MESSAGE_ENDPOINT ||
+          "https://spanish-holiday-rentals-web.vercel.app/api/sendSystemMessage";
         try {
           const chatResponse = await fetch(chatEndpoint, {
             method: "POST",
@@ -155,14 +159,15 @@ export default async function handler({ req, res, log, error }) {
           const chatData = await chatResponse.json();
           log("System message triggered for conversation:", conversationId, chatData);
         } catch (chatError) {
-          error("Error triggering system message: " + chatError.message);
+          error("Error triggering system message: " + (chatError instanceof Error ? chatError.message : chatError));
         }
       }
     }
     
     return res.json({ success: true, data: responseData });
   } catch (err) {
-    error("Error in Cloud Function: " + err.message);
-    return res.json({ success: false, error: err.message });
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    error("Error in Cloud Function: " + errorMessage);
+    return res.json({ success: false, error: errorMessage });
   }
 }
