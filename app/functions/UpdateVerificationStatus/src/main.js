@@ -1,4 +1,5 @@
 import sdk from 'node-appwrite';
+import axios from 'axios';
 
 const client = new sdk.Client();
 client
@@ -14,7 +15,7 @@ export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
 
-    // Attempt to retrieve the payload from multiple keys.
+    // Retrieve the payload.
     const rawPayload = req.bodyJson || req.bodyText || req.body;
     if (!rawPayload) {
       log("No payload provided.");
@@ -35,25 +36,30 @@ export default async function handler({ req, res, log, error }) {
     
     log("Payload received: " + JSON.stringify(payload));
 
-    // Validate the webhook secret from the payload.
+    // Validate the webhook secret.
     const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
-    if (!payload.auth || payload.auth !== expectedSecret) {
+    if (!payload.auth || (payload.auth || "").trim() !== (expectedSecret || "").trim()) {
       log("Webhook secret mismatch. Received:", payload.auth);
       return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
     }
     log("Webhook secret validated.");
 
-    // Extract expected fields from payload.
+    // Extract fields.
     const {
       userId,
+      image,
       status,
       moderationComments,
       decisionDate,
       submissionDate,
       approvedBy,
+      buttonFlag,
+      userName,
+      email,
+      phoneNumber
     } = payload;
 
-    // Query for an existing verification document for the given user.
+    // Update the verification document.
     let verificationDoc;
     try {
       const result = await databases.listDocuments(
@@ -70,19 +76,27 @@ export default async function handler({ req, res, log, error }) {
     }
 
     let responseData;
+    const dataPayload = {
+      userId,
+      status,
+      moderationComments,
+      decisionDate,
+      submissionDate,
+      approvedBy,
+      buttonFlag,
+      image,
+      userName,
+      email,
+      phoneNumber
+    };
+
     if (verificationDoc) {
       log("Updating existing document: " + verificationDoc.$id);
       responseData = await databases.updateDocument(
         databaseId,
         collectionId,
         verificationDoc.$id,
-        {
-          status,
-          moderationComments,
-          decisionDate,
-          submissionDate,
-          approvedBy,
-        }
+        dataPayload
       );
     } else {
       log("Creating new verification document.");
@@ -90,18 +104,58 @@ export default async function handler({ req, res, log, error }) {
         databaseId,
         collectionId,
         sdk.ID.unique(),
-        {
-          userId,
-          status,
-          moderationComments,
-          decisionDate,
-          submissionDate,
-          approvedBy,
-        }
+        dataPayload
       );
     }
 
     log("Verification document updated/created: " + JSON.stringify(responseData));
+    
+    // If the status is "approved" or "needs_info", trigger a conversation.
+    if (status === "approved" || status === "needs_info") {
+      // Call the createSupportConversation endpoint.
+      const createConvEndpoint = process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT || "http://localhost:4000/api/createSupportConversation";
+      // For guest-initiated, you might include bookingId; for verification, omit it.
+      const payloadForConversation = {
+        userId,
+        // Optionally include bookingId if applicable.
+      };
+      let conversationId;
+      try {
+        const convResponse = await axios.post(createConvEndpoint, payloadForConversation, {
+          headers: { "Content-Type": "application/json" }
+        });
+        conversationId = convResponse.data.conversationId;
+        log("Conversation created with ID:", conversationId);
+      } catch (convError) {
+        error("Error creating conversation: " + convError.message);
+      }
+      
+      // Prepare the system message content.
+      let systemContent = "";
+      if (status === "approved") {
+        systemContent = "Your ID has been verified. You do not need to reply.";
+      } else if (status === "needs_info") {
+        systemContent = "Support has requested additional information regarding your verification. Please reply with a new image or additional details.";
+      }
+      
+      // Trigger a system message if conversationId is available.
+      if (conversationId && systemContent) {
+        const systemMessagePayload = {
+          conversationId,
+          content: systemContent
+        };
+        const chatEndpoint = process.env.CHAT_SYSTEM_MESSAGE_ENDPOINT || "http://localhost:4000/api/sendSystemMessage";
+        try {
+          await axios.post(chatEndpoint, systemMessagePayload, {
+            headers: { "Content-Type": "application/json" }
+          });
+          log("System message triggered for conversation:", conversationId);
+        } catch (chatError) {
+          error("Error triggering system message: " + chatError.message);
+        }
+      }
+    }
+    
     return res.json({ success: true, data: responseData });
   } catch (err) {
     error("Error in Cloud Function: " + err.message);
