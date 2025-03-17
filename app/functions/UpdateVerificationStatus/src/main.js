@@ -13,19 +13,18 @@ const databaseId = process.env.APPWRITE_DATABASE_ID;
 export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
-    
+
     // Parse the payload (assuming JSON)
     const payload = req.body;
     log("Payload received: " + JSON.stringify(payload));
 
-    // Validate the webhook secret using the payload key that Glide sends.
+    // Validate the webhook secret from the body.
     const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
-if (req.body.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET !== expectedSecret) {
-  log("Webhook secret mismatch. Received:", req.body.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET);
-  return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
-}
-log("Webhook secret validated.");
-
+    if (payload.auth !== expectedSecret) {
+      log("Webhook secret mismatch. Received:", payload.auth);
+      return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
+    }
+    log("Webhook secret validated.");
 
     const {
       userId,
