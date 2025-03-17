@@ -78,7 +78,6 @@ export const config: AppwriteConfig = {
 
 export { ID };
 
-
 /**
  * Fetch properties with FilterOptions.
  */
@@ -506,12 +505,12 @@ export async function addOwnerRole(userId: string): Promise<Models.Document> {
  */
 export async function uploadFile(file: File): Promise<Models.Document> {
   try {
-    // Here, we assume file is of type File, which extends Blob.
+    // Pass the file directly; the createFile method expects a File from the browser.
     const response = await storage.createFile(
       config.bucketId,
       ID.unique(),
       file
-    );
+    ) as unknown as Models.Document;
     return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -543,7 +542,6 @@ export async function getHostProfileByUserId(userId: string): Promise<Models.Doc
     return null;
   }
 }
-
 
 export async function getUserVerificationStatus(userId: string): Promise<string | null> {
   try {
