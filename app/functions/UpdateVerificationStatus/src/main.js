@@ -113,9 +113,9 @@ export default async function handler({ req, res, log, error }) {
     
     // If the status is "approved" or "needs_info", trigger a conversation and system message.
     if (status === "approved" || status === "needs_info") {
-      // Call the conversation creation endpoint.
+      // Use a default bookingId value ("verification") for this conversation.
       const createConvEndpoint = process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT || "http://localhost:4000/api/createSupportConversation";
-      const conversationPayload = { userId }; // For verification, no bookingId is needed.
+      const conversationPayload = { bookingId: "verification", userId };
       let conversationId;
       try {
         const convResponse = await axios.post(createConvEndpoint, conversationPayload, {
@@ -135,7 +135,6 @@ export default async function handler({ req, res, log, error }) {
         systemContent = "Support has requested additional information regarding your verification. Please reply with a new image or additional details.";
       }
       
-      // Trigger the system message.
       if (conversationId && systemContent) {
         const systemMessagePayload = {
           conversationId,
@@ -144,7 +143,7 @@ export default async function handler({ req, res, log, error }) {
         const chatEndpoint = process.env.SEND_SYSTEM_MESSAGE_ENDPOINT || "http://localhost:4000/api/sendSystemMessage";
         try {
           await axios.post(chatEndpoint, systemMessagePayload, {
-            headers: { 
+            headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${process.env.GLIDE_API_KEY}`
             }
