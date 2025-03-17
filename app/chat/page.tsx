@@ -1,4 +1,3 @@
-// app/chat/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -13,7 +12,7 @@ interface Message {
   timestamp: string;
   read?: boolean;
   status?: 'sending' | 'sent' | 'failed';
-  bookingId?: string; // ✅ Ensure we store the booking ID inside messages
+  bookingId?: string; // Ensure we store the booking ID inside messages
 }
 
 export interface Conversation {
@@ -31,7 +30,7 @@ export default function ConversationListPage() {
 
   useEffect(() => {
     async function fetchConversations() {
-      if (!user) return;
+      if (!user || !user.$id) return;
       try {
         const res = await fetch(`/api/conversations?userId=${user.$id}`);
         const data = await res.json();
@@ -55,7 +54,7 @@ export default function ConversationListPage() {
 
   // Always show "Contact Support" even if no conversations exist.
   const handleContactSupport = async () => {
-    if (!user) return;
+    if (!user || !user.$id) return;
     try {
       const response = await fetch('/api/createSupportConversation', {
         method: 'POST',
@@ -68,8 +67,11 @@ export default function ConversationListPage() {
       } else {
         router.push(`/chat/support`);
       }
-    } catch (error) {
-      console.error('Error creating support conversation:', error);
+    } catch (err: unknown) {
+      console.error(
+        'Error creating support conversation:',
+        err instanceof Error ? err.message : err
+      );
     }
   };
 
@@ -97,24 +99,24 @@ export default function ConversationListPage() {
               return (
                 <li key={conv._id}>
                   <Link href={`/chat/${encodeURIComponent(conv._id)}`}>
-  <div className="block p-4 border rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-    <div className="flex justify-between">
-      <span className="font-medium text-gray-800 dark:text-white">
-        Conversation: {conv._id}
-      </span>
-      {lastMessage && (
-        <span className="text-sm text-gray-500">
-          {new Date(lastMessage.timestamp).toLocaleString()}
-        </span>
-      )}
-    </div>
-    {lastMessage && (
-      <p className="mt-2 text-gray-600 dark:text-gray-300">
-        Last message: {lastMessage.content}
-      </p>
-    )}
-  </div>
-</Link>
+                    <div className="block p-4 border rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-800 dark:text-white">
+                          Conversation: {conv._id}
+                        </span>
+                        {lastMessage && (
+                          <span className="text-sm text-gray-500">
+                            {new Date(lastMessage.timestamp).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      {lastMessage && (
+                        <p className="mt-2 text-gray-600 dark:text-gray-300">
+                          Last message: {lastMessage.content}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
                 </li>
               );
             })}
