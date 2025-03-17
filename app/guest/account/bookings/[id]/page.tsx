@@ -49,7 +49,18 @@ export default function BookingDetailsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: docId, userId: userData.$id }),
       });
-      const data = await response.json();
+      // Log the raw response text to diagnose the issue.
+      const responseText = await response.text();
+      console.log("Response text from support endpoint:", responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error("Failed to parse JSON:", jsonError);
+        setError("Invalid JSON response from support API.");
+        return;
+      }
 
       if (response.ok && data.conversationId) {
         router.push(`/chat/${encodeURIComponent(data.conversationId)}`);
