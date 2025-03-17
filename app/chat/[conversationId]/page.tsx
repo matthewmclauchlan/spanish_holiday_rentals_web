@@ -38,7 +38,8 @@ interface BookingWithProperty extends Booking {
   property?: Property;
 }
 
-const socket = io("http://localhost:4000");
+const socket = io(window.location.origin);
+
 
 export default function ConversationDetailPage() {
   const { user } = useAuth();
