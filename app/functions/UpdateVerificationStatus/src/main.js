@@ -1,5 +1,4 @@
 import sdk from 'node-appwrite';
-import axios from 'axios';
 
 const client = new sdk.Client();
 client
@@ -71,7 +70,7 @@ export default async function handler({ req, res, log, error }) {
       ...(image ? { image } : {}),
       ...(userName ? { userName } : {}),
       ...(email ? { email } : {}),
-      ...(phoneNumber ? { phoneNumber } : {}),
+      ...(phoneNumber ? { phoneNumber } : {})
     };
 
     // Query for an existing verification document for the given user.
@@ -118,10 +117,13 @@ export default async function handler({ req, res, log, error }) {
       const conversationPayload = { bookingId: "verification", userId };
       let conversationId;
       try {
-        const convResponse = await axios.post(createConvEndpoint, conversationPayload, {
-          headers: { "Content-Type": "application/json" }
+        const convResponse = await fetch(createConvEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(conversationPayload)
         });
-        conversationId = convResponse.data.conversationId;
+        const convData = await convResponse.json();
+        conversationId = convData.conversationId;
         log("Conversation created with ID:", conversationId);
       } catch (convError) {
         error("Error creating conversation: " + convError.message);
@@ -142,11 +144,14 @@ export default async function handler({ req, res, log, error }) {
         };
         const chatEndpoint = process.env.SEND_SYSTEM_MESSAGE_ENDPOINT || "http://localhost:4000/api/sendSystemMessage";
         try {
-          await axios.post(chatEndpoint, systemMessagePayload, {
+          // Trigger the system message without assigning its response.
+          await fetch(chatEndpoint, {
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${process.env.GLIDE_API_KEY}`
-            }
+            },
+            body: JSON.stringify(systemMessagePayload)
           });
           log("System message triggered for conversation:", conversationId);
         } catch (chatError) {

@@ -40,19 +40,20 @@ export async function POST(request: Request) {
     let conversationType: string;
 
     if (initiatedBy === "guest" && bookingId) {
-      // Existing guest support conversation for a booking
+      // Guest-initiated support conversation for a booking.
       const normalizedBookingId = bookingId.replace(/\//g, '_');
       const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
       conversationId = `${normalizedBookingId}-${userId}-${supportUserId}`;
       conversationType = 'support';
     } else if (initiatedBy === "support") {
-      // Support-initiated conversation
+      // Support-initiated conversation.
       const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
       conversationId = `support-${userId}-${supportUserId}`;
       conversationType = 'support-initiated';
     } else {
-      // Default case (verification, etc.)
-      conversationId = `verification-${userId}-${process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce'}`;
+      // Default case (e.g., verification updates).
+      const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
+      conversationId = `verification-${userId}-${supportUserId}`;
       conversationType = 'verification';
     }
 

@@ -22,18 +22,22 @@ export async function POST(request: Request) {
       status: "sent",
       system: true // Custom flag to mark system messages.
     };
-
-    await conversationsCollection.updateOne(
+    // Update the conversation document with the new system message.
+    const result = await conversationsCollection.updateOne(
       { _id: conversationId },
-      { 
+      {
         $push: { messages: systemMessage },
-        $set: { updatedAt: new Date().toISOString() }
+        $set: { updatedAt: new Date() }
       }
     );
 
-    return NextResponse.json({ success: true, message: systemMessage });
-  } catch (error: any) {
-    console.error("Error in /api/sendSystemMessage:", error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    if (result.modifiedCount === 1) {
+      return NextResponse.json({ success: true, message: systemMessage });
+    } else {
+      return NextResponse.json({ error: 'Conversation not found or message not added' }, { status: 404 });
+    }
+  } catch (err) {
+    console.error("Error in sendSystemMessage:", err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
