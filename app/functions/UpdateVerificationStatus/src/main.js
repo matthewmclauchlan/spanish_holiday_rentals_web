@@ -9,24 +9,28 @@ client
 export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
-    // Log available keys in the request object
+    // Log available keys and specific body properties for debugging.
     log("Request keys: " + Object.keys(req).join(", "));
-    log("Raw req.body: " + req.body);
-    log("Raw req.payload: " + req.payload);
+    log("Raw req.bodyText: " + req.bodyText);
+    log("Raw req.bodyJson: " + JSON.stringify(req.bodyJson));
 
-    // Try to get the raw payload from req.body or req.payload.
-    const rawPayload = req.body || req.payload;
+    // Try to get the raw payload from req.bodyJson, req.bodyText, or req.body.
+    const rawPayload = req.bodyJson || req.bodyText || req.body;
     if (!rawPayload) {
       log("No payload provided.");
       return res.json({ success: false, error: "No payload provided" });
     }
     
     let payload;
-    try {
-      payload = typeof rawPayload === "string" ? JSON.parse(rawPayload) : rawPayload;
-    } catch (parseError) {
-      log("Error parsing payload: " + parseError.message);
-      return res.json({ success: false, error: "Invalid JSON payload" });
+    if (typeof rawPayload === "string") {
+      try {
+        payload = JSON.parse(rawPayload);
+      } catch (parseError) {
+        log("Error parsing payload: " + parseError.message);
+        return res.json({ success: false, error: "Invalid JSON payload" });
+      }
+    } else {
+      payload = rawPayload;
     }
     
     log("Payload received: " + JSON.stringify(payload));
