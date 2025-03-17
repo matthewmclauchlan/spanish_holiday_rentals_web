@@ -1,24 +1,29 @@
-import { 
-  Client, 
-  Account, 
-  Databases, 
-  OAuthProvider, 
-  Query, 
-  Models, 
-  ID, 
+// lib/appwrite.ts
+
+import {
+  Client,
+  Account,
+  Databases,
+  OAuthProvider,
+  Query,
+  Models,
+  ID,
   Storage,
-  Teams 
-} from 'appwrite';
-import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from './types';
+  Teams,
+  Permission,
+} from "appwrite";
+import { FilterOptions, HouseRules, Review, Booking, BookingRules, PriceRules, PriceAdjustment } from "./types";
 
 const client = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'project-id');
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1")
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "project-id");
 
-// For server-side calls (e.g. in Cloud Functions), add the API key header if it's provided.
-// Ensure that APPWRITE_API_KEY is defined in your function's environment (not NEXT_PUBLIC_ to avoid exposing secrets).
+// For server-side calls, add the API key if provided.
 if (process.env.APPWRITE_API_KEY) {
-  (client as unknown as { addHeader: (key: string, value: string) => void }).addHeader('X-Appwrite-Key', process.env.APPWRITE_API_KEY);
+  (client as unknown as { addHeader: (key: string, value: string) => void }).addHeader(
+    "X-Appwrite-Key",
+    process.env.APPWRITE_API_KEY
+  );
 }
 
 export const account = new Account(client);
@@ -46,44 +51,33 @@ export interface AppwriteConfig {
   glideApiKey: string;
   glideAppId: string;
   glideGuestApprovalWebhookSecret: string;
+  rolesCollectionId: string;
 }
 
 export const config: AppwriteConfig = {
-  endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1',
-  databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '',
-  propertiesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID || '',
-  mediaCollectionId: process.env.NEXT_PUBLIC_APPWRITE_MEDIA_COLLECTION_ID || '',
-  bucketId: process.env.NEXT_PUBLIC_APPWRITE_MEDIA_BUCKET_ID || '',
-  projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '',
-  hostCollectionId: process.env.NEXT_PUBLIC_APPWRITE_HOST_COLLECTION_ID || '',
-  houseRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_HOUSE_RULES_COLLECTION_ID || '',
-  reviewsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID || '',
-  bookingsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKINGS_COLLECTION_ID || '',
-  bookingRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKING_RULES_COLLECTION_ID || '',
-  priceRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_RULES_COLLECTION_ID || '',
-  priceAdjustmentsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_ADJUSTMENTS_COLLECTION_ID || '',
-  verificationBucketId: process.env.NEXT_PUBLIC_APPWRITE_VERIFICATION_BUCKET_ID || '',
-  guestVerificationsCollectionId: process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID || '',
-  glideApiKey: process.env.GLIDE_API_KEY || '',
-  glideAppId: process.env.GLIDE_APP_ID || '',
-  glideGuestApprovalWebhookSecret: process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET || '',
+  endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1",
+  databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "",
+  propertiesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID || "",
+  mediaCollectionId: process.env.NEXT_PUBLIC_APPWRITE_MEDIA_COLLECTION_ID || "",
+  bucketId: process.env.NEXT_PUBLIC_APPWRITE_MEDIA_BUCKET_ID || "",
+  projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "",
+  hostCollectionId: process.env.NEXT_PUBLIC_APPWRITE_HOST_COLLECTION_ID || "",
+  houseRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_HOUSE_RULES_COLLECTION_ID || "",
+  reviewsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID || "",
+  bookingsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKINGS_COLLECTION_ID || "",
+  bookingRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKING_RULES_COLLECTION_ID || "",
+  priceRulesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_RULES_COLLECTION_ID || "",
+  priceAdjustmentsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PRICE_ADJUSTMENTS_COLLECTION_ID || "",
+  verificationBucketId: process.env.NEXT_PUBLIC_APPWRITE_VERIFICATION_BUCKET_ID || "",
+  guestVerificationsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_GUEST_VERIFICATIONS_COLLECTION_ID || "",
+  glideApiKey: process.env.GLIDE_API_KEY || "",
+  glideAppId: process.env.GLIDE_APP_ID || "",
+  glideGuestApprovalWebhookSecret: process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET || "",
+  rolesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_ROLES_COLLECTION_ID || "",
 };
 
 export { ID };
 
-
-export const getImageUrl = (id: string): string => {
-  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-  const bucketId = process.env.NEXT_PUBLIC_APPWRITE_MEDIA_BUCKET_ID;
-
-  if (!endpoint || !projectId || !bucketId) {
-    console.error('Missing one or more Appwrite environment variables.');
-    return '';
-  }
-
-  return `${endpoint}/storage/buckets/${bucketId}/files/${id}/view?project=${projectId}`;
-};
 
 /**
  * Fetch properties with FilterOptions.
@@ -171,31 +165,6 @@ export async function getProperties({
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("❌ Error fetching properties:", errorMessage);
     throw error;
-  }
-}
-
-/**
- * Fetch host profile by userId.
- */
-export async function getHostProfileByUserId(userId: string): Promise<Models.Document | null> {
-  try {
-    const hostCollId = config.hostCollectionId;
-    if (!hostCollId) {
-      throw new Error("Missing host collection ID.");
-    }
-    const result = await databases.listDocuments<Models.Document>(
-      config.databaseId,
-      hostCollId,
-      [Query.equal("userId", userId)]
-    );
-    if (result.documents.length > 0) {
-      return result.documents[0];
-    }
-    return null;
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("❌ Error fetching host profile:", errorMessage);
-    return null;
   }
 }
 
@@ -433,4 +402,166 @@ export const getAvatarUrl = (fileId: string): string => {
   return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
 };
 
+/**
+ * getImageUrl
+ * Returns the URL for an image file stored in your media bucket.
+ */
+export const getImageUrl = (id: string): string => {
+  const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+  const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+  const bucketId = process.env.NEXT_PUBLIC_APPWRITE_MEDIA_BUCKET_ID;
+  if (!endpoint || !projectId || !bucketId) {
+    console.error("Missing one or more Appwrite environment variables.");
+    return "";
+  }
+  return `${endpoint}/storage/buckets/${bucketId}/files/${id}/view?project=${projectId}`;
+};
 
+/**
+ * upsertHostProfile
+ * Creates (or updates) a host profile document in the host collection.
+ */
+interface HostProfilePayload {
+  userId: string;
+  fullName: string;
+  phoneNumber: string;
+  hostDocumentUrl: string;
+  termsAccepted?: boolean;
+  approvalStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function upsertHostProfile(data: {
+  userId: string;
+  fullName: string;
+  phoneNumber: string;
+  hostDocumentUrl: string;
+  termsAccepted?: boolean;
+}): Promise<Models.Document> {
+  const collectionId = config.hostCollectionId;
+  if (!collectionId) {
+    throw new Error("Missing host collection ID.");
+  }
+  const now = new Date().toISOString();
+  const payload: HostProfilePayload = {
+    userId: data.userId,
+    fullName: data.fullName,
+    phoneNumber: data.phoneNumber,
+    hostDocumentUrl: data.hostDocumentUrl,
+    termsAccepted: data.termsAccepted,
+    approvalStatus: "pending",
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    const hostDoc = await databases.createDocument(
+      config.databaseId,
+      collectionId,
+      ID.unique(),
+      payload,
+      [
+        Permission.read(`user:${data.userId}`),
+        Permission.update(`user:${data.userId}`),
+        Permission.delete(`user:${data.userId}`)
+      ]
+    );
+    return hostDoc;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    console.error("Error creating/updating host profile:", errorMessage);
+    throw error;
+  }
+}
+
+/**
+ * addOwnerRole
+ * Assigns the "owner" role to a user.
+ */
+export async function addOwnerRole(userId: string): Promise<Models.Document> {
+  const now = new Date().toISOString();
+  try {
+    const response = await databases.createDocument(
+      config.databaseId,
+      config.rolesCollectionId,
+      ID.unique(),
+      {
+        userId,
+        role: "owner",
+        createdAt: now,
+        updatedAt: now,
+      }
+    );
+    return response;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    console.error("Error adding owner role:", errorMessage);
+    throw error;
+  }
+}
+
+/**
+ * uploadFile
+ * Uploads a File object (from an HTML input) to your storage bucket.
+ */
+export async function uploadFile(file: File): Promise<Models.Document> {
+  try {
+    // Here, we assume file is of type File, which extends Blob.
+    const response = await storage.createFile(
+      config.bucketId,
+      ID.unique(),
+      file
+    );
+    return response;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    console.error("Error uploading file:", errorMessage);
+    throw error;
+  }
+}
+
+/**
+ * Fetch host profile by userId.
+ */
+export async function getHostProfileByUserId(userId: string): Promise<Models.Document | null> {
+  try {
+    const hostCollId = config.hostCollectionId;
+    if (!hostCollId) {
+      throw new Error("Missing host collection ID.");
+    }
+    const result = await databases.listDocuments<Models.Document>(
+      config.databaseId,
+      hostCollId,
+      [Query.equal("userId", userId)]
+    );
+    if (result.documents.length > 0) {
+      return result.documents[0];
+    }
+    return null;
+  } catch (error) {
+    console.error("❌ Error fetching host profile:", error);
+    return null;
+  }
+}
+
+
+export async function getUserVerificationStatus(userId: string): Promise<string | null> {
+  try {
+    const verificationCollectionId = process.env.NEXT_PUBLIC_APPWRITE_GUEST_VERIFICATIONS_COLLECTION_ID;
+    if (!verificationCollectionId) {
+      throw new Error("Missing guest verifications collection ID.");
+    }
+    const result = await databases.listDocuments<Models.Document>(
+      config.databaseId,
+      verificationCollectionId,
+      [Query.equal("userId", userId)]
+    );
+    if (result.documents.length > 0) {
+      return result.documents[0].status as string;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching verification status:", error);
+    return null;
+  }
+}

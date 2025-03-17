@@ -25,7 +25,7 @@ const guestDropdownNavigation = [
 ];
 
 const guestDropdownExtra = [
-  { name: "Become a Host", href: "/guest/become-a-host" },
+  { name: "Become a Host", href: "/guest/account/host-signup" },
 ];
 
 const supportDropdownNavigation = [

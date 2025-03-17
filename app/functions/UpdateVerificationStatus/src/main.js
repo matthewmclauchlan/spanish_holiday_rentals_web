@@ -7,7 +7,7 @@ client
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new sdk.Databases(client);
-const collectionId = process.env.NEXT_PUBLIC_GUEST_VERIFICATIONS_COLLECTION_ID;
+const collectionId = process.env.NEXT_PUBLIC_APPWRITE_GUEST_VERIFICATIONS_COLLECTION_ID;
 const databaseId = process.env.APPWRITE_DATABASE_ID;
 
 export default async function handler({ req, res, log, error }) {
