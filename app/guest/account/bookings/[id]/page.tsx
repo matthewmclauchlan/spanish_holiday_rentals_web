@@ -39,29 +39,28 @@ export default function BookingDetailsPage() {
       setError("Booking ID is missing. Please try again.");
       return;
     }
-
+  
     try {
       const userData = await account.get();
-      const docId = booking.$id; // Use document ID
-      // Updated URL to the public endpoint.
+      const docId = booking.$id;
       const response = await fetch("https://spanish-holiday-rentals-web.vercel.app/api/createSupportConversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: docId, userId: userData.$id }),
       });
-      // Log the raw response text to diagnose the issue.
-      const responseText = await response.text();
-      console.log("Response text from support endpoint:", responseText);
       
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+  
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (jsonError) {
         console.error("Failed to parse JSON:", jsonError);
-        setError("Invalid JSON response from support API.");
+        setError("Received an invalid JSON response from support API.");
         return;
       }
-
+  
       if (response.ok && data.conversationId) {
         router.push(`/chat/${encodeURIComponent(data.conversationId)}`);
       } else {
@@ -72,6 +71,7 @@ export default function BookingDetailsPage() {
       setError("Error contacting support. Please try again later.");
     }
   };
+  
 
   useEffect(() => {
     async function fetchBookingDetails() {

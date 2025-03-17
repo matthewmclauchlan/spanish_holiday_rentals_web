@@ -4,7 +4,7 @@ import { MongoClient, ServerApiVersion } from 'mongodb';
 // Load environment variables
 dotenv.config({ path: '../.env' });
 
-const uri = process.env.MONGO_URI;
+const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGO_DB_NAME || 'spanish_holiday_rentals';
 
 if (!uri) {
