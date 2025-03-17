@@ -8,6 +8,16 @@ interface UpdateData {
   openedBy?: string;
 }
 
+interface Message {
+  messageId: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+  read: boolean;
+  status: string;
+  senderAvatarUrl: string;
+}
+
 type RouteContext = {
   params: Promise<{ conversationId: string }>;
 };
@@ -41,20 +51,20 @@ export async function POST(
     }
 
     // Prepare update operations.
-    const updateOps: { $set: UpdateData; $push?: { messages: any } } = {
+    const updateOps: { $set: UpdateData; $push?: { messages: Message } } = {
       $set: updateData,
     };
 
     // If conversation is resolved, add a system message including the support user's avatar.
     if (status === "resolved") {
-      const systemMessage = {
+      const systemMessage: Message = {
         messageId: new ObjectId().toHexString(),
         senderId: openedBy, // the support user's ID
         content: "This conversation has been closed.",
         timestamp: new Date().toISOString(),
         read: false,
         status: "sent",
-        senderAvatarUrl: senderAvatarUrl || "", // include the support avatar
+        senderAvatarUrl: senderAvatarUrl || "",
       };
       updateOps.$push = { messages: systemMessage };
     }

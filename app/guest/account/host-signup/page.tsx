@@ -18,6 +18,12 @@ enum WizardStep {
   REVIEW = 3,
 }
 
+interface UserProfile {
+  name?: string;
+  phone?: string;
+  $id: string;
+}
+
 export default function HostSignupWizard() {
   const router = useRouter();
   const { user, fetchUser } = useAuth();
@@ -48,9 +54,10 @@ export default function HostSignupWizard() {
   // Pre-fill basic info when user loads.
   useEffect(() => {
     if (user) {
-      setFullName(user.name || "");
-      // Adjust this according to your user model; e.g. user.prefs.phone or user.phone.
-      setPhone((user as any).phone || "");
+      // Casting user as a minimal UserProfile type to access phone
+      const userProfile = user as UserProfile;
+      setFullName(userProfile.name || "");
+      setPhone(userProfile.phone || "");
     }
   }, [user]);
 
@@ -106,8 +113,10 @@ export default function HostSignupWizard() {
       await addOwnerRole(currentUser.$id);
       await fetchUser();
       router.replace("/(guest)/applicationProcessing");
-    } catch (err: any) {
-      setError(err.message || "Failed to submit host application.");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to submit host application.";
+      setError(errorMessage);
     }
   };
 
@@ -225,7 +234,10 @@ export default function HostSignupWizard() {
             <h2 className="text-xl font-semibold mb-4">Step 4: Review & Submit</h2>
             <p className="mb-2">Full Name: {fullName}</p>
             <p className="mb-2">Phone: {phone}</p>
-            <p className="mb-2">ID File: {docFile ? docFile.name : verificationStatus ? "Previously Submitted" : "None"}</p>
+            <p className="mb-2">
+              ID File:{" "}
+              {docFile ? docFile.name : verificationStatus ? "Previously Submitted" : "None"}
+            </p>
             <p className="mb-2">Terms Accepted: {acceptTerms ? "Yes" : "No"}</p>
           </div>
         )}

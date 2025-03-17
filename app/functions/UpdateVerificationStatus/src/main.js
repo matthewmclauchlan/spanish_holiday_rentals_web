@@ -14,7 +14,7 @@ export default async function handler({ req, res, log, error }) {
   try {
     log("Function execution started.");
 
-    // Retrieve the payload.
+    // Retrieve and parse the payload.
     const rawPayload = req.bodyJson || req.bodyText || req.body;
     if (!rawPayload) {
       log("No payload provided.");
@@ -37,7 +37,7 @@ export default async function handler({ req, res, log, error }) {
 
     // Validate the webhook secret.
     const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
-    if (!payload.auth || (payload.auth || "").trim() !== (expectedSecret || "").trim()) {
+    if (!payload.auth || payload.auth.trim() !== expectedSecret.trim()) {
       log("Webhook secret mismatch. Received:", payload.auth);
       return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
     }
@@ -70,10 +70,10 @@ export default async function handler({ req, res, log, error }) {
       ...(image ? { image } : {}),
       ...(userName ? { userName } : {}),
       ...(email ? { email } : {}),
-      ...(phoneNumber ? { phoneNumber } : {})
+      ...(phoneNumber ? { phoneNumber } : {}),
     };
 
-    // Query for an existing verification document for the given user.
+    // Query for an existing verification document.
     let verificationDoc;
     try {
       const result = await databases.listDocuments(
@@ -112,7 +112,7 @@ export default async function handler({ req, res, log, error }) {
     
     // If the status is "approved" or "needs_info", trigger a conversation and system message.
     if (status === "approved" || status === "needs_info") {
-      // Use a default bookingId value ("verification") for this conversation.
+      // Use a default bookingId ("verification") for these cases.
       const createConvEndpoint = process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT || "http://localhost:4000/api/createSupportConversation";
       const conversationPayload = { bookingId: "verification", userId };
       let conversationId;
@@ -144,8 +144,7 @@ export default async function handler({ req, res, log, error }) {
         };
         const chatEndpoint = process.env.SEND_SYSTEM_MESSAGE_ENDPOINT || "http://localhost:4000/api/sendSystemMessage";
         try {
-          // Trigger the system message without assigning its response.
-          await fetch(chatEndpoint, {
+          const chatResponse = await fetch(chatEndpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -153,7 +152,8 @@ export default async function handler({ req, res, log, error }) {
             },
             body: JSON.stringify(systemMessagePayload)
           });
-          log("System message triggered for conversation:", conversationId);
+          const chatData = await chatResponse.json();
+          log("System message triggered for conversation:", conversationId, chatData);
         } catch (chatError) {
           error("Error triggering system message: " + chatError.message);
         }

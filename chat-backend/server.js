@@ -67,7 +67,7 @@ app.get('/api/bookings/:bookingId', async (req, res) => {
 });
 
 // Support Conversation API
-app.post('/createSupportConversation', async (req, res) => {
+app.post('/api/createSupportConversation', async (req, res) => {
   const { bookingId, userId } = req.body;
   if (!bookingId || !userId) {
     console.log('❌ Missing bookingId or userId:', { bookingId, userId });
