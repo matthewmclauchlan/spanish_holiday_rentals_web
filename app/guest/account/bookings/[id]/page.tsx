@@ -1,4 +1,4 @@
-"use client";
+"use client"; 
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -43,7 +43,8 @@ export default function BookingDetailsPage() {
     try {
       const userData = await account.get();
       const docId = booking.$id; // Use document ID
-      const response = await fetch("http://localhost:4000/createSupportConversation", {
+      // Updated URL to the public endpoint.
+      const response = await fetch("https://spanish-holiday-rentals-web.vercel.app/api/createSupportConversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: docId, userId: userData.$id }),
@@ -51,7 +52,7 @@ export default function BookingDetailsPage() {
       const data = await response.json();
 
       if (response.ok && data.conversationId) {
-        router.push(`/chat/${data.conversationId}`);
+        router.push(`/chat/${encodeURIComponent(data.conversationId)}`);
       } else {
         setError(data.error || "Unable to create support conversation.");
       }
