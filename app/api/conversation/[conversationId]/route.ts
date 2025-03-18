@@ -1,19 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../../chat-backend/db';
-
-interface Conversation {
-  _id: string;
-  participants: string[];
-  messages: {
-    senderId: string;
-    content: string;
-    timestamp: Date;
-    senderAvatarUrl?: string;
-    read?: boolean;
-    status?: string;
-  }[];
-  createdAt: Date;
-}
 
 type RouteContext = {
   params: Promise<{ conversationId: string }>;
@@ -29,14 +14,31 @@ export async function GET(
     return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
   }
 
+  // Build the target URL using the live chat-backend URL
+  const backendUrl = process.env.NEXT_PUBLIC_CHAT_BACKEND_URL;
+  if (!backendUrl) {
+    return NextResponse.json(
+      { error: 'Chat backend URL is not configured' },
+      { status: 500 }
+    );
+  }
+  const targetUrl = `${backendUrl}/api/conversation/${conversationId}`;
+
   try {
-    const db = await connectDB();
-    const conversationsCollection = db.collection('conversations');
-    const conversation = (await conversationsCollection.findOne({ _id: conversationId })) as Conversation | null;
-    const messages = conversation?.messages ?? [];
-    return NextResponse.json({ messages }, { status: 200 });
+    const response = await fetch(targetUrl);
+    if (!response.ok) {
+      const errorData = await response.json();
+      return NextResponse.json(
+        { error: errorData.error || 'Error fetching conversation' },
+        { status: response.status }
+      );
+    }
+    const data = await response.json();
+    // Expecting the chat-backend to return { messages: [...] }
+    return NextResponse.json(data, { status: 200 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     console.error('Error fetching conversation:', errorMessage);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
