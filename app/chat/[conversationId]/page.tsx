@@ -38,7 +38,9 @@ interface BookingWithProperty extends Booking {
   property?: Property;
 }
 
-const socket = io(window.location.origin);
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || window.location.origin);
+
+
 
 
 export default function ConversationDetailPage() {
