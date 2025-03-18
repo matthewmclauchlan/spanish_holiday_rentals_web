@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(_request: Request) {
-  // Mark _request as used to avoid ESLint warning.
-  void _request;
+export async function GET() {
+  // Use the support user ID from the environment variable as a default.
+  // If needed, you could also extract a userId from the request here.
+  const userId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
 
-  // Get support user ID from environment (or use a default)
-  const supportUserId = process.env.SUPPORT_USER_ID || '67d2eb99001ca2b957ce';
-  
-  // Get the live chat-backend URL from environment variable
+  // Get the live chat-backend URL from your environment variable.
   const backendUrl = process.env.NEXT_PUBLIC_CHAT_BACKEND_URL;
   if (!backendUrl) {
     return NextResponse.json(
@@ -15,11 +13,11 @@ export async function GET(_request: Request) {
       { status: 500 }
     );
   }
-  
-  // Construct target URL for the chat-backend's conversations endpoint
-  // Here, we assume your chat-backend API supports filtering by supportUserId via query parameters.
-  const targetUrl = `${backendUrl}/api/conversations?supportUserId=${encodeURIComponent(supportUserId)}`;
-  
+
+  // Construct the target URL for the chat-backend's conversations endpoint,
+  // using the query parameter name "userId" (which your backend expects).
+  const targetUrl = `${backendUrl}/api/conversations?userId=${encodeURIComponent(userId)}`;
+
   try {
     const response = await fetch(targetUrl);
     if (!response.ok) {
