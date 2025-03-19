@@ -40,9 +40,6 @@ interface BookingWithProperty extends Booking {
 
 const socket = io(process.env.NEXT_PUBLIC_CHAT_BACKEND_URL || window.location.origin);
 
-
-
-
 export default function ConversationDetailPage() {
   const { user } = useAuth();
   const params = useParams();
@@ -52,7 +49,7 @@ export default function ConversationDetailPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [booking, setBooking] = useState<BookingWithProperty | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [conversationStatus, setConversationStatus] = useState<string>("new");
 
@@ -80,10 +77,9 @@ export default function ConversationDetailPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Fetch booking details
+  // Fetch booking details only if this is not a verification conversation.
   useEffect(() => {
-    if (!bookingId) {
-      setError("Booking ID not provided.");
+    if (bookingId === "verification") {
       setLoading(false);
       return;
     }
@@ -209,7 +205,7 @@ export default function ConversationDetailPage() {
   if (loading) {
     return <div className="p-4 dark:bg-gray-900 dark:text-gray-100">Loading...</div>;
   }
-  if (error || !booking) {
+  if (error || (bookingId !== "verification" && !booking)) {
     return (
       <div className="p-4 text-red-500 dark:bg-gray-900 dark:text-gray-100">
         {error || "Booking not found"}
@@ -245,7 +241,7 @@ export default function ConversationDetailPage() {
       )}
 
       <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
-        {booking.property && (
+        {bookingId !== "verification" && booking && booking.property && (
           <div className="flex items-center gap-4">
             {booking.property.mainImage && (
               <Image
@@ -262,18 +258,28 @@ export default function ConversationDetailPage() {
             </h2>
           </div>
         )}
-        <p className="mt-4 text-gray-700 dark:text-gray-200">
-          <strong>Booking Reference:</strong> {booking.bookingReference}
-        </p>
-        <p className="mt-2 text-gray-700 dark:text-gray-200">
-          <strong>Dates:</strong> {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
-        </p>
-        <p className="mt-2 text-gray-700 dark:text-gray-200">
-          <strong>Status:</strong> {booking.status}
-        </p>
-        <p className="mt-2 text-gray-700 dark:text-gray-200">
-          <strong>Total:</strong> €{booking.totalPrice.toFixed(2)}
-        </p>
+        {bookingId !== "verification" && booking && (
+          <>
+            <p className="mt-4 text-gray-700 dark:text-gray-200">
+              <strong>Booking Reference:</strong> {booking.bookingReference}
+            </p>
+            <p className="mt-2 text-gray-700 dark:text-gray-200">
+              <strong>Dates:</strong>{" "}
+              {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+            </p>
+            <p className="mt-2 text-gray-700 dark:text-gray-200">
+              <strong>Status:</strong> {booking.status}
+            </p>
+            <p className="mt-2 text-gray-700 dark:text-gray-200">
+              <strong>Total:</strong> €{booking.totalPrice.toFixed(2)}
+            </p>
+          </>
+        )}
+        {bookingId === "verification" && (
+          <p className="mt-4 text-gray-700 dark:text-gray-200">
+            This conversation is not tied to a booking.
+          </p>
+        )}
       </div>
 
       {/* Chat Messages */}
@@ -304,7 +310,7 @@ export default function ConversationDetailPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input (moved below chat messages) */}
+      {/* Message Input */}
       <div className="mt-4 flex gap-2">
         <input
           value={input}
