@@ -56,10 +56,15 @@ export default function ConversationListPage() {
   const handleContactSupport = async () => {
     if (!user || !user.$id) return;
     try {
+      // If the current user is support, include supportAgentId and set initiatedBy to "support".
+      const payload = user.roles.includes("support")
+        ? { bookingId: 'N/A', userId: user.$id, initiatedBy: 'support', supportAgentId: user.$id }
+        : { bookingId: 'N/A', userId: user.$id };
+  
       const response = await fetch('/api/createSupportConversation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: 'N/A', userId: user.$id }),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (data.conversationId) {
@@ -67,13 +72,14 @@ export default function ConversationListPage() {
       } else {
         router.push(`/chat/support`);
       }
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(
         'Error creating support conversation:',
         err instanceof Error ? err.message : err
       );
     }
   };
+  
 
   if (loading) return <div>Loading conversations...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
