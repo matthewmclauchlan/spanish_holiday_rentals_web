@@ -107,7 +107,6 @@ export default async function handler({ req, res, log, error }) {
         dataPayload
       );
     }
-
     log("Verification document updated/created: " + JSON.stringify(responseData));
     
     // If the status is "approved" or "needs_info", trigger a conversation and system message.
