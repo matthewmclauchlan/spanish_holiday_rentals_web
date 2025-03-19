@@ -107,6 +107,7 @@ export default async function handler({ req, res, log, error }) {
         dataPayload
       );
     }
+
     log("Verification document updated/created: " + JSON.stringify(responseData));
     
     // If the status is "approved" or "needs_info", trigger a conversation and system message.
@@ -130,12 +131,16 @@ export default async function handler({ req, res, log, error }) {
         error("Error creating conversation: " + (convError instanceof Error ? convError.message : convError));
       }
       
-      // Prepare system message content.
+      // Prepare system message content using moderationComments if available.
       let systemContent = "";
       if (status === "approved") {
-        systemContent = "Your ID has been verified. You do not need to reply.";
+        systemContent = moderationComments 
+          ? `Verified: ${moderationComments}` 
+          : "Your ID has been verified. You do not need to reply.";
       } else if (status === "needs_info") {
-        systemContent = "Support has requested additional information regarding your verification. Please reply with a new image or additional details.";
+        systemContent = moderationComments 
+          ? `Needs Info: ${moderationComments}` 
+          : "Support has requested additional information regarding your verification. Please reply with a new image or additional details.";
       }
       
       if (conversationId && systemContent) {
