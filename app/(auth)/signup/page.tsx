@@ -1,4 +1,3 @@
-// /app/(auth)/signup/page.tsx
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -18,8 +17,7 @@ export default function SignUpPage() {
     setError('');
     try {
       await signUp(email, password, name);
-      // Instead of directly going to /guest/guestTabs,
-      // redirect to a verification pending page.
+      // Redirect to a verification pending page.
       router.push('/auth/verification-pending');
     } catch {
       setError('Failed to create account. Please try again.');
@@ -36,7 +34,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8 bg-white dark:bg-gray-900">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <Image
           alt="Spanish Holiday Rentals"
@@ -45,16 +43,19 @@ export default function SignUpPage() {
           height={40}
           className="mx-auto h-10 w-auto"
         />
-        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
+        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           Create a new account
         </h2>
       </div>
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         {error && <p className="text-red-500">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Form inputs for name, email, password */}
+          {/* Full Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-900">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Full Name
             </label>
             <div className="mt-2">
@@ -65,12 +66,16 @@ export default function SignUpPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600"
+                className="block w-full rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-300 focus:outline-2 focus:outline-indigo-600"
               />
             </div>
           </div>
+          {/* Email Address */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-900">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Email address
             </label>
             <div className="mt-2">
@@ -81,12 +86,16 @@ export default function SignUpPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600"
+                className="block w-full rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-300 focus:outline-2 focus:outline-indigo-600"
               />
             </div>
           </div>
+          {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-900">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
               Password
             </label>
             <div className="mt-2">
@@ -97,10 +106,11 @@ export default function SignUpPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600"
+                className="block w-full rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-300 focus:outline-2 focus:outline-indigo-600"
               />
             </div>
           </div>
+          {/* Sign Up Button */}
           <div>
             <button
               type="submit"
@@ -110,6 +120,7 @@ export default function SignUpPage() {
             </button>
           </div>
         </form>
+        {/* Sign Up with Google */}
         <div className="mt-4">
           <button
             onClick={handleGoogleSignUp}
@@ -118,9 +129,12 @@ export default function SignUpPage() {
             Sign up with Google
           </button>
         </div>
-        <p className="mt-10 text-center text-sm text-gray-500">
+        <p className="mt-10 text-center text-sm text-gray-500 dark:text-gray-400">
           Already have an account?{' '}
-          <a href="/signin" className="font-semibold text-indigo-600 hover:text-indigo-500">
+          <a
+            href="/signin"
+            className="font-semibold text-indigo-600 hover:text-indigo-500"
+          >
             Sign in
           </a>
         </p>

@@ -1,4 +1,4 @@
-"use client"; 
+'use client';
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -72,7 +72,6 @@ export default function BookingDetailsPage() {
     }
   };
   
-
   useEffect(() => {
     async function fetchBookingDetails() {
       if (!bookingId) {
@@ -124,11 +123,12 @@ export default function BookingDetailsPage() {
     <div className="dark:bg-gray-900 dark:text-gray-100 min-h-screen p-4">
       {/* Container for responsiveness */}
       <div className="max-w-xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-50">
+        <h1 className="text-2xl font-semibold mb-6 text-white">
           Booking Details
         </h1>
 
-        <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700 space-y-4">
+        {/* Content Container without card styling */}
+        <div className="space-y-6">
           {/* Property Details */}
           {booking.property && (
             <div className="flex items-center gap-4">
@@ -141,7 +141,7 @@ export default function BookingDetailsPage() {
                   className="rounded-md object-cover"
                 />
               )}
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+              <h2 className="text-lg font-semibold text-white">
                 {booking.property.name}
               </h2>
             </div>
@@ -149,66 +149,66 @@ export default function BookingDetailsPage() {
 
           {/* Booking Summary */}
           <div>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               <strong>Booking Reference:</strong> {booking.bookingReference}
             </p>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               <strong>Dates:</strong>{" "}
               {new Date(booking.startDate).toLocaleDateString()} -{" "}
               {new Date(booking.endDate).toLocaleDateString()}
             </p>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               <strong>Status:</strong> {booking.status}
             </p>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               <strong>Total:</strong> €{booking.totalPrice.toFixed(2)}
             </p>
           </div>
 
-          <hr className="border-gray-300 dark:border-gray-700" />
+          <hr className="border-t border-white" />
 
           {/* Stay Details Placeholder */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+            <h3 className="text-lg font-semibold text-white">
               Stay Details
             </h3>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               [Placeholder: Check-in instructions, guest capacity, amenities, etc.]
             </p>
           </div>
 
-          <hr className="border-gray-300 dark:border-gray-700" />
+          <hr className="border-t border-white" />
 
           {/* Payment Details Placeholder */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+            <h3 className="text-lg font-semibold text-white">
               Payment Details
             </h3>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               [Placeholder: Breakdown of total cost, taxes, fees, payment method, etc.]
             </p>
           </div>
 
-          <hr className="border-gray-300 dark:border-gray-700" />
+          <hr className="border-t border-white" />
 
           {/* Property Details Placeholder */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+            <h3 className="text-lg font-semibold text-white">
               Property Details
             </h3>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               [Placeholder: Full description of the property, images, location, map, amenities, etc.]
             </p>
           </div>
 
-          <hr className="border-gray-300 dark:border-gray-700" />
+          <hr className="border-t border-white" />
 
           {/* Next Steps Placeholder */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-50">
+            <h3 className="text-lg font-semibold text-white">
               Next Steps
             </h3>
-            <p className="text-gray-700 dark:text-gray-200">
+            <p className="text-white">
               [Placeholder: ID submission instructions, check-in procedure, special requests,
               contact info, etc.]
             </p>

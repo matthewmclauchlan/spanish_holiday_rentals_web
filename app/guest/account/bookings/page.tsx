@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -91,32 +91,44 @@ export default function BookingsPage() {
   }, [currentPage]);
 
   if (loading) {
-    return <div className="dark:text-gray-100">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
   if (error) {
-    return <div className="text-red-500 dark:text-red-400">Error: {error}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {`Error: ${error}`}
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">Your Bookings</h1>
+    <div className="min-h-screen">
+      <h1 className="text-2xl font-semibold mb-6 p-4 text-white">
+        Your Bookings
+      </h1>
       {!user ? (
-        <div>
-          <p>You need to log in to view your bookings.</p>
+        <div className="p-4">
+          <p className="text-white">
+            You need to log in to view your bookings.
+          </p>
           <Link href="/signin" className="text-blue-500 hover:underline">
             Sign In
           </Link>
         </div>
       ) : bookings.length === 0 ? (
-        <div>
-          <p>No trips booked... yet!</p>
+        <div className="p-4">
+          <p className="text-white">No trips booked... yet!</p>
           <button
             onClick={() => router.push("/explore")}
             className="text-blue-500 hover:underline"
           >
             Start searching
           </button>
-          <p>
+          <p className="text-white">
             Can’t find your reservation here?{" "}
             <Link
               href="/help/how-to-get-started-with-spanish-holiday-rentals"
@@ -128,92 +140,95 @@ export default function BookingsPage() {
         </div>
       ) : (
         <>
-          <Table className="w-full border-collapse dark:bg-gray-800 dark:text-gray-100">
-            <TableHead>
-              <TableRow>
-                <TableHeader>Property</TableHeader>
-                <TableHeader>Booking Reference</TableHeader>
-                <TableHeader>Payment</TableHeader>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {bookings.map((booking) => (
-                <TableRow
-                  key={booking.$id}
-                  href={`/guest/account/bookings/${booking.$id}`}
-                  // Add these hover classes to highlight the row in blue
-                  className="transition-colors hover:bg-blue-600 hover:text-white cursor-pointer"
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-4">
-                      {booking.property?.mainImage ? (
-                        <Image
-                          src={getImageUrl(booking.property.mainImage)}
-                          alt={booking.property.name}
-                          width={100}
-                          height={100}
-                          className="rounded-md object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-md"></div>
-                      )}
-                      <div className="font-medium text-gray-800 dark:text-gray-100">
-                        {booking.property?.name || "Unknown Property"}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-gray-800 dark:text-gray-100">
-                    {booking.bookingReference}
-                  </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-300">
-                    €{booking.totalPrice.toFixed(2)}
-                  </TableCell>
+          {/* Table rendered directly on the page with horizontal white lines for row separation */}
+          <div className="overflow-x-auto p-4">
+            <Table className="w-full">
+              <TableHead>
+                <TableRow className="border-b border-white">
+                  <TableHeader className="text-white">Property</TableHeader>
+                  <TableHeader className="text-white">Booking Reference</TableHeader>
+                  <TableHeader className="text-white">Payment</TableHeader>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {bookings.map((booking) => (
+                  <TableRow
+                    key={booking.$id}
+                    href={`/guest/account/bookings/${booking.$id}`}
+                    className="transition-colors hover:bg-blue-600 hover:text-white cursor-pointer border-b border-white"
+                  >
+                    <TableCell className="text-white">
+                      <div className="flex items-center gap-4">
+                        {booking.property?.mainImage ? (
+                          <Image
+                            src={getImageUrl(booking.property.mainImage)}
+                            alt={booking.property.name}
+                            width={100}
+                            height={100}
+                            className="rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-300 rounded-md"></div>
+                        )}
+                        <div className="font-medium">
+                          {booking.property?.name || "Unknown Property"}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium text-white">
+                      {booking.bookingReference}
+                    </TableCell>
+                    <TableCell className="text-white">
+                      €{booking.totalPrice.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-          <Pagination className="mt-6 flex items-center gap-2">
-            <PaginationPrevious
-              href={`?page=${currentPage - 1}`}
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              // Styles for background + white text + border
-              className="bg-blue-600 border border-blue-700 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              Prev
-            </PaginationPrevious>
+          {/* Pagination directly below the table */}
+          <div className="p-4">
+            <Pagination className="mt-6 flex items-center gap-2">
+              <PaginationPrevious
+                href={`?page=${currentPage - 1}`}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                className="bg-blue-600 border border-blue-700 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                Prev
+              </PaginationPrevious>
 
-            <PaginationList className="flex items-center gap-1">
-              {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => i + 1).map((page) => (
-                <PaginationPage
-                  key={page}
-                  href={`?page=${page}`}
-                  current={page === currentPage}
-                  onClick={() => setCurrentPage(page)}
-                  // Style for each page number
-                  className={`px-3 py-1 rounded transition-colors ${
-                    page === currentPage
-                      ? "bg-blue-700 text-white"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  {page}
-                </PaginationPage>
-              ))}
-            </PaginationList>
+              <PaginationList className="flex items-center gap-1">
+                {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => i + 1).map((page) => (
+                  <PaginationPage
+                    key={page}
+                    href={`?page=${page}`}
+                    current={page === currentPage}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded transition-colors ${
+                      page === currentPage
+                        ? "bg-blue-700 text-white"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    {page}
+                  </PaginationPage>
+                ))}
+              </PaginationList>
 
-            <PaginationNext
-              href={`?page=${currentPage + 1}`}
-              disabled={currentPage >= Math.ceil(total / pageSize)}
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(total / pageSize)))
-              }
-              className="bg-blue-600 border border-blue-700 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              Next
-            </PaginationNext>
-          </Pagination>
+              <PaginationNext
+                href={`?page=${currentPage + 1}`}
+                disabled={currentPage >= Math.ceil(total / pageSize)}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(total / pageSize)))
+                }
+                className="bg-blue-600 border border-blue-700 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                Next
+              </PaginationNext>
+            </Pagination>
+          </div>
         </>
       )}
     </div>

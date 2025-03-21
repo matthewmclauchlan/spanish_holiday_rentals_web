@@ -7,6 +7,7 @@ client
   .setKey(process.env.APPWRITE_API_KEY);
 
 const databases = new sdk.Databases(client);
+const users = new sdk.Users(client);
 const collectionId = process.env.NEXT_PUBLIC_APPWRITE_GUEST_VERIFICATIONS_COLLECTION_ID;
 const databaseId = process.env.APPWRITE_DATABASE_ID;
 
@@ -38,7 +39,7 @@ export default async function handler({ req, res, log, error }) {
     // Validate the webhook secret.
     const expectedSecret = process.env.GLIDE_GUEST_APPROVAL_WEBHOOK_SECRET;
     if (!payload.auth || payload.auth.trim() !== expectedSecret.trim()) {
-      log("Webhook secret mismatch. Received:", payload.auth);
+      log("Webhook secret mismatch. Received: " + payload.auth);
       return res.json({ success: false, error: "Unauthorized: invalid webhook secret" });
     }
     log("Webhook secret validated.");
@@ -86,7 +87,7 @@ export default async function handler({ req, res, log, error }) {
         verificationDoc = result.documents[0];
       }
     } catch (fetchError) {
-      error("Error fetching verification document: " + fetchError.message);
+      error("Error fetching verification document: " + (fetchError.message || "Unknown error"));
     }
 
     let responseData;
@@ -112,7 +113,6 @@ export default async function handler({ req, res, log, error }) {
     
     // If the status is "approved" or "needs_info", trigger a conversation and system message.
     if (status === "approved" || status === "needs_info") {
-      // Use a default bookingId ("verification") for these cases.
       const createConvEndpoint =
         process.env.CREATE_SUPPORT_CONVERSATION_ENDPOINT ||
         "https://spanish-holiday-rentals-web.vercel.app/api/createSupportConversation";
@@ -126,9 +126,9 @@ export default async function handler({ req, res, log, error }) {
         });
         const convData = await convResponse.json();
         conversationId = convData.conversationId;
-        log("Conversation created with ID:", conversationId);
+        log("Conversation created with ID: " + conversationId);
       } catch (convError) {
-        error("Error creating conversation: " + (convError instanceof Error ? convError.message : convError));
+        error("Error creating conversation: " + (convError.message || convError));
       }
       
       // Prepare system message content using moderationComments if available.
@@ -156,21 +156,31 @@ export default async function handler({ req, res, log, error }) {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${process.env.GLIDE_API_KEY}`
+              "Authorization": "Bearer " + process.env.GLIDE_API_KEY
             },
             body: JSON.stringify(systemMessagePayload)
           });
           const chatData = await chatResponse.json();
-          log("System message triggered for conversation:", conversationId, chatData);
+          log("System message triggered for conversation: " + conversationId + " " + JSON.stringify(chatData));
         } catch (chatError) {
-          error("Error triggering system message: " + (chatError instanceof Error ? chatError.message : chatError));
+          error("Error triggering system message: " + (chatError.message || chatError));
+        }
+      }
+      
+      // Update user labels if verified.
+      if (status === "approved") {
+        try {
+          const labelResponse = await users.updateLabels(userId, ["verified"]);
+          log("User labels updated: " + JSON.stringify(labelResponse));
+        } catch (labelError) {
+          error("Error updating user labels: " + (labelError.message || labelError));
         }
       }
     }
     
     return res.json({ success: true, data: responseData });
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    const errorMessage = (err && err.message) ? err.message : "Unknown error";
     error("Error in Cloud Function: " + errorMessage);
     return res.json({ success: false, error: errorMessage });
   }
